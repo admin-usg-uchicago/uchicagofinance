@@ -1,0 +1,26 @@
+# Secrets
+.secrets/
+*.pem
+*.key
+credentials.json
+authorized_user.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Data artifacts
+data/raw/
+data/interim/
+*.csv.bak
