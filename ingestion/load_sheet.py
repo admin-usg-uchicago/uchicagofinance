@@ -1,16 +1,16 @@
 """Pull Google Drive spreadsheets (native Sheets or uploaded .xlsx) into pandas.
 
-Sheets are registered in backend/sources.yaml. The CLI accepts a registry key,
+Sheets are registered in ingestion/sources.yaml. The CLI accepts a registry key,
 a raw file ID, or a full Sheets URL.
 
 First run opens a browser to authorize; token caches to .secrets/authorized_user.json.
 
 Usage:
-    python backend/load_sheet.py <key|file_id|url> [WORKSHEET_NAME]
-    python backend/load_sheet.py <key|file_id|url> --csv
-    python backend/load_sheet.py --all
-    python backend/load_sheet.py --list
-    python backend/load_sheet.py --regen-docs
+    python ingestion/load_sheet.py <key|file_id|url> [WORKSHEET_NAME]
+    python ingestion/load_sheet.py <key|file_id|url> --csv
+    python ingestion/load_sheet.py --all
+    python ingestion/load_sheet.py --list
+    python ingestion/load_sheet.py --regen-docs
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SECRETS = REPO_ROOT / ".secrets"
 CLIENT_SECRETS = SECRETS / "oauth_client.json"
 TOKEN_CACHE = SECRETS / "authorized_user.json"
-SOURCES_YAML = REPO_ROOT / "backend" / "sources.yaml"
+SOURCES_YAML = REPO_ROOT / "ingestion" / "sources.yaml"
 ACCESSED_SHEETS_MD = REPO_ROOT / "Accessed_Sheets.md"
 DATA_DIR = REPO_ROOT / "data" / "raw"
 
@@ -176,15 +176,15 @@ def dump_to_csv(key: str, tabs: dict[str, pd.DataFrame]) -> list[tuple[Path, int
 
 def render_markdown(sources: list[Source]) -> str:
     lines = [
-        "<!-- AUTO-GENERATED FROM backend/sources.yaml — DO NOT EDIT BY HAND -->",
-        "<!-- To update: edit backend/sources.yaml, then run `python backend/load_sheet.py --regen-docs` -->",
+        "<!-- AUTO-GENERATED FROM ingestion/sources.yaml — DO NOT EDIT BY HAND -->",
+        "<!-- To update: edit ingestion/sources.yaml, then run `python ingestion/load_sheet.py --regen-docs` -->",
         "",
         "# Accessed Sheets",
         "",
         "Google Sheets registered with the loader. Pull any of them with:",
         "",
         "```bash",
-        "python backend/load_sheet.py <key>",
+        "python ingestion/load_sheet.py <key>",
         "```",
         "",
         "> **Listing a sheet here does not grant Google Drive access.** Each contributor's",
@@ -206,17 +206,17 @@ def render_markdown(sources: list[Source]) -> str:
             "## Adding a new sheet",
             "",
             "1. Share the Google Sheet with every uchicago.edu account that needs access (read is enough).",
-            "2. Add an entry to [`backend/sources.yaml`](backend/sources.yaml) with a short `key`, the full URL, and a one-line description.",
+            "2. Add an entry to [`ingestion/sources.yaml`](ingestion/sources.yaml) with a short `key`, the full URL, and a one-line description.",
             "3. Regenerate this file:",
             "",
             "   ```bash",
-            "   python backend/load_sheet.py --regen-docs",
+            "   python ingestion/load_sheet.py --regen-docs",
             "   ```",
             "",
             "4. Verify the loader can reach it:",
             "",
             "   ```bash",
-            "   python backend/load_sheet.py <your-new-key>",
+            "   python ingestion/load_sheet.py <your-new-key>",
             "   ```",
             "",
         ]
@@ -291,7 +291,7 @@ def cmd_pull_one(arg: str, worksheet: str | None, want_csv: bool, sources: list[
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Pull Google Sheets registered in backend/sources.yaml into pandas / CSV.",
+        description="Pull Google Sheets registered in ingestion/sources.yaml into pandas / CSV.",
     )
     parser.add_argument(
         "source",

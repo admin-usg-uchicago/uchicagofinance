@@ -11,7 +11,7 @@
 #   committee:   optional — committee that owns the sheet, if applicable
 #
 # After editing this file, regenerate the human-readable index at repo root:
-#   python backend/load_sheet.py --regen-docs
+#   python ingestion/load_sheet.py --regen-docs
 
 sources:
   - key: sgfc_annall_2025-2026

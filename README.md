@@ -16,7 +16,7 @@ uchicagofinance/
 ├── CLAUDE.md               # product spec, roles, data model, workflow
 ├── README.md               # this file — setup instructions
 ├── plan/                   # planning docs
-├── backend/                # python — data ingestion + (eventually) API
+├── ingestion/             # python — data ingestion (Google Drive → pandas)
 │   ├── load_sheet.py       # google drive → pandas loader
 │   ├── requirements.txt
 │   └── onboarding/         # data-pull onboarding (auth, sources, how to add new sheets)
@@ -32,8 +32,8 @@ uchicagofinance/
 - **Python 3.11+**
 - **Node 20+** and **npm 10+**
 - **Git**
-- A **uchicago.edu Google account** with access to the source spreadsheets (for backend ingestion)
-- **`oauth_client.json`** emailed to you by the repo maintainer — see [Backend setup](#backend-setup) below
+- A **uchicago.edu Google account** with access to the source spreadsheets (for the ingestion script)
+- **`oauth_client.json`** emailed to you by the repo maintainer — see [Ingestion setup](#ingestion-setup) below
 
 ---
 
@@ -46,7 +46,7 @@ cd uchicagofinance
 
 ---
 
-## Backend setup
+## Ingestion setup
 
 Ingests allocation data from Google Drive spreadsheets into pandas.
 
@@ -55,7 +55,7 @@ Ingests allocation data from Google Drive spreadsheets into pandas.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r backend/requirements.txt
+pip install -r ingestion/requirements.txt
 ```
 
 ### 2. Get the OAuth client file
@@ -73,17 +73,17 @@ mkdir -p .secrets
 
 ### 3. First run
 
-Sheets the loader knows about are listed in [`Accessed_Sheets.md`](Accessed_Sheets.md) (auto-generated from [`backend/sources.yaml`](backend/sources.yaml)). Pull any of them by key:
+Sheets the loader knows about are listed in [`Accessed_Sheets.md`](Accessed_Sheets.md) (auto-generated from [`ingestion/sources.yaml`](ingestion/sources.yaml)). Pull any of them by key:
 
 ```bash
 # USG Master Log — RSO directory + ongoing event allocations
-python3 backend/load_sheet.py master_log
+python3 ingestion/load_sheet.py master_log
 
 # SGFC Annual Cycle (WIP) — one committee's annual allocation working doc
-python3 backend/load_sheet.py sgfc_annual
+python3 ingestion/load_sheet.py sgfc_annual
 
 # Or pull every registered source and dump each tab to data/raw/<key>__<tab>.csv
-python3 backend/load_sheet.py --all
+python3 ingestion/load_sheet.py --all
 ```
 
 You can also pass a raw file ID or a full Sheets URL directly. Other useful flags: `--list` (show registry), `--csv` (dump to CSV instead of preview), `--regen-docs` (rebuild `Accessed_Sheets.md` after editing `sources.yaml`).
@@ -93,15 +93,15 @@ You can also pass a raw file ID or a full Sheets URL directly. Other useful flag
 - Subsequent commands reuse the cached token and run silently
 - You should see previews of every tab in each file (tab name, row × col count, first 5 rows)
 
-To register a new sheet, see [Adding a new sheet](Accessed_Sheets.md#adding-a-new-sheet). Tab descriptions and known quirks for each source live in [backend/onboarding/README.md § 7](backend/onboarding/README.md#7-current-data-sources).
+To register a new sheet, see [Adding a new sheet](Accessed_Sheets.md#adding-a-new-sheet). Tab descriptions and known quirks for each source live in [ingestion/onboarding/README.md § 7](ingestion/onboarding/README.md#7-current-data-sources).
 
 ### More details
 
-Current registered data sources, per-file quirks, troubleshooting, and the procedure for adding new sheets are all in **[backend/onboarding/README.md](backend/onboarding/README.md)**.
+Current registered data sources, per-file quirks, troubleshooting, and the procedure for adding new sheets are all in **[ingestion/onboarding/README.md](ingestion/onboarding/README.md)**.
 
 ### For the maintainer only
 
-If you're setting up the Google Cloud project from scratch (or rotating the OAuth client), see Section 4 of [backend/onboarding/README.md](backend/onboarding/README.md). Everyone else can skip that.
+If you're setting up the Google Cloud project from scratch (or rotating the OAuth client), see Section 4 of [ingestion/onboarding/README.md](ingestion/onboarding/README.md). Everyone else can skip that.
 
 ---
 
@@ -131,10 +131,10 @@ Dev server runs at `http://localhost:5173`.
 # terminal 1 — frontend
 cd frontend && npm run dev
 
-# terminal 2 — backend (ad-hoc data pulls, or later a running API)
+# terminal 2 — ingestion (ad-hoc data pulls)
 source .venv/bin/activate
-python backend/load_sheet.py <key>          # pull one registered sheet (see Accessed_Sheets.md)
-python backend/load_sheet.py --all          # pull every registered sheet to data/raw/*.csv
+python ingestion/load_sheet.py <key>          # pull one registered sheet (see Accessed_Sheets.md)
+python ingestion/load_sheet.py --all          # pull every registered sheet to data/raw/*.csv
 ```
 
 ---
@@ -142,7 +142,7 @@ python backend/load_sheet.py --all          # pull every registered sheet to dat
 ## Contributing
 
 - **Never commit `.secrets/`** — it's gitignored; keep it that way
-- Before adding a new spreadsheet data source, read the "Adding a new data source" section in [backend/onboarding/README.md](backend/onboarding/README.md)
+- Before adding a new spreadsheet data source, read the "Adding a new data source" section in [ingestion/onboarding/README.md](ingestion/onboarding/README.md)
 - For non-trivial work, follow the workflow protocol in [CLAUDE.md](CLAUDE.md) (discovery → research → planning → execution, tracked under `.claude-project/`)
 
 ---
@@ -151,4 +151,4 @@ python backend/load_sheet.py --all          # pull every registered sheet to dat
 
 - **Repo:** https://github.com/admin-usg-uchicago/uchicagofinance
 - **Product spec:** [CLAUDE.md](CLAUDE.md)
-- **Data ingestion onboarding:** [backend/onboarding/README.md](backend/onboarding/README.md)
+- **Data ingestion onboarding:** [ingestion/onboarding/README.md](ingestion/onboarding/README.md)

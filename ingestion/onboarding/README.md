@@ -83,12 +83,12 @@ From the repo root:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r backend/requirements.txt
+pip install -r ingestion/requirements.txt
 ```
 
 ### 5.3 First run — authorize
 ```bash
-python backend/load_sheet.py <FILE_ID>
+python ingestion/load_sheet.py <FILE_ID>
 ```
 
 - A browser opens (or a URL is printed — paste it into your browser)
@@ -105,7 +105,7 @@ python backend/load_sheet.py <FILE_ID>
 
 ```bash
 source .venv/bin/activate
-python backend/load_sheet.py <FILE_ID> [WORKSHEET_NAME]
+python ingestion/load_sheet.py <FILE_ID> [WORKSHEET_NAME]
 ```
 
 ### Finding `FILE_ID`
@@ -123,7 +123,7 @@ Grab the string between `/d/` and `/edit`.
 
 ### Programmatic use
 ```python
-from backend.load_sheet import load_sheet
+from ingestion.load_sheet import load_sheet
 
 df = load_sheet("<FILE_ID>", "Sheet1")               # one tab
 all_tabs = load_sheet("<FILE_ID>")                   # dict[tab_name, DataFrame]
@@ -133,7 +133,7 @@ all_tabs = load_sheet("<FILE_ID>")                   # dict[tab_name, DataFrame]
 
 ## 7. Current data sources
 
-The canonical list of registered sheets (key, URL, description) lives in [`backend/sources.yaml`](../sources.yaml) and is rendered into [`Accessed_Sheets.md`](../../Accessed_Sheets.md) at the repo root. This section adds the editorial content the registry doesn't carry: role within the data model, per-tab notes, and known quirks.
+The canonical list of registered sheets (key, URL, description) lives in [`ingestion/sources.yaml`](../sources.yaml) and is rendered into [`Accessed_Sheets.md`](../../Accessed_Sheets.md) at the repo root. This section adds the editorial content the registry doesn't carry: role within the data model, per-tab notes, and known quirks.
 
 | Key | Role | Notes |
 |---|---|---|
@@ -167,7 +167,7 @@ Follow this checklist whenever a new spreadsheet needs to be ingested (e.g., PCC
 
 ### 8.2 Smoke-test with the existing loader
 ```bash
-python backend/load_sheet.py <NEW_URL_OR_FILE_ID>
+python ingestion/load_sheet.py <NEW_URL_OR_FILE_ID>
 ```
 This prints every tab's shape and first 5 rows. Verify:
 - All expected tabs appear
@@ -175,10 +175,10 @@ This prints every tab's shape and first 5 rows. Verify:
 - Headers look right (first data row should be real data, not a title / merged cell)
 
 ### 8.3 Register the sheet
-Add an entry to [`backend/sources.yaml`](../sources.yaml) with a short snake_case `key`, the full URL, and a one-line description (and `committee:` if applicable). Then regenerate the human-readable index:
+Add an entry to [`ingestion/sources.yaml`](../sources.yaml) with a short snake_case `key`, the full URL, and a one-line description (and `committee:` if applicable). Then regenerate the human-readable index:
 
 ```bash
-python backend/load_sheet.py --regen-docs
+python ingestion/load_sheet.py --regen-docs
 ```
 
 This rewrites [`Accessed_Sheets.md`](../../Accessed_Sheets.md) at the repo root. Commit `sources.yaml` and `Accessed_Sheets.md` together.
@@ -191,7 +191,7 @@ Document the file in [Section 7 above](#7-current-data-sources) with:
 - Known quirks (header row offset, scratchpad cells, empty tabs, etc.)
 
 ### 8.5 Handle per-file quirks in the normalization layer
-**Do not modify [load_sheet.py](../load_sheet.py) for file-specific logic.** The loader is a generic downloader. Per-file parsing belongs in a separate module (`backend/normalize/<source>.py` or similar), which:
+**Do not modify [load_sheet.py](../load_sheet.py) for file-specific logic.** The loader is a generic downloader. Per-file parsing belongs in a separate module (`ingestion/normalize/<source>.py` or similar), which:
 - Takes the raw DataFrame/dict from `load_sheet()`
 - Selects the right tab
 - Applies header offset, row filtering, column renames
@@ -200,7 +200,7 @@ Document the file in [Section 7 above](#7-current-data-sources) with:
 This keeps the ingestion layer generic and keeps quirks discoverable and testable.
 
 ### 8.6 Wire into scheduled pulls
-Once we have a scheduler (cron / GitHub Actions / Cloud Scheduler — TBD), it should call `python backend/load_sheet.py --all` on the daily refresh cadence the public site expects. Because the registry is the single source of truth, registering a sheet in `sources.yaml` is all it takes for the scheduled job to start pulling it. Per-source extras the scheduler may eventually need (normalizer module path, target entity, refresh frequency override) can be added as new optional fields on the `sources.yaml` entry.
+Once we have a scheduler (cron / GitHub Actions / Cloud Scheduler — TBD), it should call `python ingestion/load_sheet.py --all` on the daily refresh cadence the public site expects. Because the registry is the single source of truth, registering a sheet in `sources.yaml` is all it takes for the scheduled job to start pulling it. Per-source extras the scheduler may eventually need (normalizer module path, target entity, refresh frequency override) can be added as new optional fields on the `sources.yaml` entry.
 
 ---
 
@@ -216,7 +216,7 @@ The authenticated account can't see the file. Check in order:
 3. Force a re-auth if the cached token is for the wrong account:
    ```bash
    rm .secrets/authorized_user.json
-   python backend/load_sheet.py <FILE_ID>
+   python ingestion/load_sheet.py <FILE_ID>
    ```
 4. If the file is in a Shared Drive, confirm you're a member of that drive. (`supportsAllDrives=true` is already set in the loader.)
 
@@ -260,7 +260,7 @@ uchicagofinance/
 ├── .secrets/                       # gitignored; OAuth client + cached token
 │   ├── oauth_client.json
 │   └── authorized_user.json        # created on first run
-├── backend/
+├── ingestion/
 │   ├── load_sheet.py               # generic Drive → pandas loader
 │   ├── requirements.txt
 │   └── onboarding/
