@@ -12,6 +12,7 @@ type AnnualRow = {
 
 type YearlyRow = {
   'RSO Name': string
+  'Request Description': string
   Type: string
   Requested: string
   'Final Allocation': string
@@ -274,9 +275,38 @@ function ContactPage() {
   )
 }
 
+type HistoryYear = {
+  year: string
+  annualPath: string
+  yearlyPath: string
+}
+
+// Add new academic years by dropping CSVs in frontend/public/history/<year>/
+// and appending an entry here. Missing files are surfaced as "no data yet".
+const HISTORY_YEARS: HistoryYear[] = [
+  {
+    year: '2025-2026',
+    annualPath: '/annual_allocations.csv',
+    yearlyPath: '/yearly_allocations.csv',
+  },
+]
+
+async function fetchCsvRows<T>(path: string): Promise<T[] | null> {
+  const res = await fetch(path)
+  if (!res.ok) return null
+  const text = await res.text()
+  return Papa.parse<T>(text, { header: true, skipEmptyLines: true }).data
+}
+
+type YearBundle = { annual: AnnualRow[]; yearly: YearlyRow[] }
+
 function AllocationsPage() {
+  const [selectedYear, setSelectedYear] = useState<string>(HISTORY_YEARS[0].year)
   const [annualRows, setAnnualRows] = useState<AnnualRow[]>([])
   const [yearlyRows, setYearlyRows] = useState<YearlyRow[]>([])
+  const [yearMissing, setYearMissing] = useState(false)
+  const [allYearsData, setAllYearsData] = useState<Map<string, YearBundle>>(new Map())
+  const [selectedRso, setSelectedRso] = useState<string>('')
   const [chartMode, setChartMode] = useState<ChartMode>('bar')
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('combined')
   const [topCount, setTopCount] = useState(25)
@@ -287,28 +317,66 @@ function AllocationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const entry = HISTORY_YEARS.find((y) => y.year === selectedYear)
+    if (!entry) {
+      setAnnualRows([])
+      setYearlyRows([])
+      setYearMissing(true)
+      setLoading(false)
+      return
+    }
+    let cancelled = false
     async function loadData() {
       setLoading(true)
-      const [annualRes, yearlyRes] = await Promise.all([
-        fetch('/annual_allocations.csv').then((res) => res.text()),
-        fetch('/yearly_allocations.csv').then((res) => res.text()),
+      setYearMissing(false)
+      const [annualParsed, yearlyParsed] = await Promise.all([
+        fetchCsvRows<AnnualRow>(entry!.annualPath),
+        fetchCsvRows<YearlyRow>(entry!.yearlyPath),
       ])
-
-      const annualParsed = Papa.parse<AnnualRow>(annualRes, {
-        header: true,
-        skipEmptyLines: true,
-      }).data
-      const yearlyParsed = Papa.parse<YearlyRow>(yearlyRes, {
-        header: true,
-        skipEmptyLines: true,
-      }).data
-
-      setAnnualRows(annualParsed)
-      setYearlyRows(yearlyParsed)
+      if (cancelled) return
+      if (annualParsed === null && yearlyParsed === null) {
+        setAnnualRows([])
+        setYearlyRows([])
+        setYearMissing(true)
+      } else {
+        setAnnualRows(annualParsed ?? [])
+        setYearlyRows(yearlyParsed ?? [])
+        setYearMissing(false)
+      }
       setLoading(false)
     }
 
     void loadData()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedYear])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadAllYears() {
+      const entries = await Promise.all(
+        HISTORY_YEARS.map(async (entry) => {
+          const [annual, yearly] = await Promise.all([
+            fetchCsvRows<AnnualRow>(entry.annualPath),
+            fetchCsvRows<YearlyRow>(entry.yearlyPath),
+          ])
+          if (annual === null && yearly === null) return null
+          return [
+            entry.year,
+            { annual: annual ?? [], yearly: yearly ?? [] },
+          ] as [string, YearBundle]
+        }),
+      )
+      if (cancelled) return
+      const map = new Map<string, YearBundle>()
+      for (const e of entries) if (e) map.set(e[0], e[1])
+      setAllYearsData(map)
+    }
+    void loadAllYears()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const totals = useMemo(() => {
@@ -584,13 +652,123 @@ function AllocationsPage() {
     [filteredAndSortedRows, topCount, showAllRsos],
   )
 
+  const yoyTotals = useMemo(() => {
+    return HISTORY_YEARS.map(({ year }) => {
+      const bundle = allYearsData.get(year)
+      if (!bundle) return { year, annual: 0, yearly: 0, combined: 0, available: false }
+      const annual = bundle.annual.reduce(
+        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+        0,
+      )
+      const yearly = bundle.yearly.reduce(
+        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+        0,
+      )
+      return { year, annual, yearly, combined: annual + yearly, available: true }
+    })
+  }, [allYearsData])
+
+  const yoyChart = useMemo(() => {
+    const available = yoyTotals.filter((row) => row.available)
+    return {
+      data: [
+        {
+          type: 'bar',
+          x: available.map((row) => row.year),
+          y: available.map((row) => row.annual),
+          name: 'Annual',
+          marker: { color: '#800000' },
+        },
+        {
+          type: 'bar',
+          x: available.map((row) => row.year),
+          y: available.map((row) => row.yearly),
+          name: 'Yearly',
+          marker: { color: '#c87373' },
+        },
+      ] as Partial<Data>[],
+      layout: {
+        barmode: 'stack',
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.2 },
+        yaxis: { title: { text: 'Funded (USD)' } },
+      } as Partial<Layout>,
+    }
+  }, [yoyTotals])
+
+  const spotlightRsoOptions = useMemo(() => {
+    const names = new Set<string>()
+    for (const [, bundle] of allYearsData) {
+      for (const row of bundle.annual) {
+        const name = row['RSO Name']?.trim()
+        if (name) names.add(name)
+      }
+      for (const row of bundle.yearly) {
+        const name = row['RSO Name']?.trim()
+        if (name) names.add(name)
+      }
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b))
+  }, [allYearsData])
+
+  const spotlightByYear = useMemo(() => {
+    if (!selectedRso) return []
+    return HISTORY_YEARS.map(({ year }) => {
+      const bundle = allYearsData.get(year)
+      if (!bundle) {
+        return { year, available: false, annual: 0, yearly: 0, events: [] as YearlyRow[] }
+      }
+      const annual = bundle.annual
+        .filter((row) => row['RSO Name']?.trim() === selectedRso)
+        .reduce(
+          (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+          0,
+        )
+      const events = bundle.yearly.filter((row) => row['RSO Name']?.trim() === selectedRso)
+      const yearly = events.reduce(
+        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+        0,
+      )
+      return { year, available: true, annual, yearly, events }
+    })
+  }, [allYearsData, selectedRso])
+
+  const spotlightChart = useMemo(() => {
+    const available = spotlightByYear.filter((row) => row.available)
+    return {
+      data: [
+        {
+          type: 'bar',
+          x: available.map((row) => row.year),
+          y: available.map((row) => row.annual),
+          name: 'Annual Funded',
+          marker: { color: '#800000' },
+        },
+        {
+          type: 'bar',
+          x: available.map((row) => row.year),
+          y: available.map((row) => row.yearly),
+          name: 'Yearly Funded',
+          marker: { color: '#c87373' },
+        },
+      ] as Partial<Data>[],
+      layout: {
+        title: { text: selectedRso ? `${selectedRso} — Funding Over Years` : 'Pick an RSO' },
+        barmode: 'stack',
+        yaxis: { title: { text: 'Funded Amount (USD)' } },
+      } as Partial<Layout>,
+    }
+  }, [spotlightByYear, selectedRso])
+
   return (
     <>
       <section className="hero hero-allocations">
         <div className="hero-overlay">
           <div className="alloc-topbar">
             <p>USG Allocation Dashboard</p>
-            <button type="button">Export CSV</button>
+            <div className="alloc-topbar-actions">
+              <button type="button">Export CSV</button>
+            </div>
           </div>
           <h2>USG Allocation Intelligence Dashboard</h2>
           <p>
@@ -598,21 +776,88 @@ function AllocationsPage() {
           </p>
           <div className="stats">
             <article>
-              <h3>Annual Final Allocation</h3>
+              <h3>Annual Final Allocation · {selectedYear}</h3>
               <p>{CURRENCY.format(totals.annual)}</p>
             </article>
             <article>
-              <h3>Yearly Final Allocation</h3>
+              <h3>Yearly Final Allocation · {selectedYear}</h3>
               <p>{CURRENCY.format(totals.yearly)}</p>
             </article>
             <article>
-              <h3>Combined Tracked Total</h3>
+              <h3>Combined Tracked Total · {selectedYear}</h3>
               <p>{CURRENCY.format(totals.combined)}</p>
             </article>
           </div>
         </div>
       </section>
       <main className="content container">
+        <section className="panel year-picker-row">
+          <label>
+            Academic Year
+            <select
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+            >
+              {HISTORY_YEARS.map((entry) => (
+                <option key={entry.year} value={entry.year}>{entry.year}</option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">
+            Switch the year to re-render the dashboard with that year's published allocations.
+          </p>
+        </section>
+
+        {yearMissing && !loading ? (
+          <section className="panel year-missing">
+            <p>No data published for {selectedYear} yet. Add CSVs at <code>frontend/public/history/{selectedYear}/</code> and register the year in <code>HISTORY_YEARS</code>.</p>
+          </section>
+        ) : null}
+
+        <section className="panel yoy-panel">
+          <div className="yoy-header">
+            <div>
+              <h3>Year-over-Year Totals</h3>
+              <p className="muted">Combined RSO funding across all loaded academic years.</p>
+            </div>
+          </div>
+          <div className="yoy-body">
+            <PlotlyChart
+              data={yoyChart.data}
+              height={240}
+              layout={{
+                ...yoyChart.layout,
+                paper_bgcolor: '#ffffff',
+                plot_bgcolor: '#ffffff',
+                margin: { l: 60, r: 10, b: 30, t: 10 },
+                font: { family: 'Open Sans, Arial, sans-serif', color: '#2d2d2d' },
+              }}
+            />
+            <div className="table-wrap">
+              <table className="alloc-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Annual</th>
+                    <th>Yearly</th>
+                    <th>Combined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {yoyTotals.map((row) => (
+                    <tr key={row.year}>
+                      <td>{row.year}</td>
+                      <td>{row.available ? CURRENCY.format(row.annual) : '—'}</td>
+                      <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
+                      <td>{row.available ? CURRENCY.format(row.combined) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section className="panel controls">
           <h3>Dashboard Controls</h3>
           <div className="control-grid">
@@ -755,6 +1000,90 @@ function AllocationsPage() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section className="panel spotlight-panel">
+          <div className="spotlight-header">
+            <div>
+              <h3>RSO Spotlight</h3>
+              <p className="muted">Pick an RSO to see its allocation history across all loaded years.</p>
+            </div>
+            <label className="spotlight-picker">
+              RSO
+              <select
+                value={selectedRso}
+                onChange={(event) => setSelectedRso(event.target.value)}
+                disabled={spotlightRsoOptions.length === 0}
+              >
+                <option value="">— Select an RSO —</option>
+                {spotlightRsoOptions.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {selectedRso ? (
+            <>
+              <PlotlyChart
+                data={spotlightChart.data}
+                height={360}
+                layout={{
+                  ...spotlightChart.layout,
+                  paper_bgcolor: '#ffffff',
+                  plot_bgcolor: '#ffffff',
+                  margin: { l: 60, r: 20, b: 60, t: 50 },
+                  font: { family: 'Open Sans, Arial, sans-serif', color: '#2d2d2d' },
+                }}
+              />
+              <div className="table-wrap">
+                <table className="alloc-table">
+                  <thead>
+                    <tr>
+                      <th>Year</th>
+                      <th>Annual Funded</th>
+                      <th>Yearly Funded</th>
+                      <th>Combined</th>
+                      <th>Yearly Events</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spotlightByYear.map((row) => (
+                      <tr key={row.year}>
+                        <td>{row.year}</td>
+                        <td>{row.available ? CURRENCY.format(row.annual) : '—'}</td>
+                        <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
+                        <td>{row.available ? CURRENCY.format(row.annual + row.yearly) : '—'}</td>
+                        <td>
+                          {row.available && row.events.length > 0 ? (
+                            <ul className="event-list">
+                              {row.events.map((event, idx) => (
+                                <li key={`${row.year}-${idx}`}>
+                                  <strong>{event['Request Description'] || '(no description)'}</strong>
+                                  <span className="muted"> · {event.Type || 'Unspecified'}</span>
+                                  <span> — req {CURRENCY.format(Number.parseFloat(event.Requested || '0') || 0)}, funded {CURRENCY.format(Number.parseFloat(event['Final Allocation'] || '0') || 0)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : row.available ? (
+                            <span className="muted">No events</span>
+                          ) : (
+                            <span className="muted">No data</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <p className="muted">
+              {spotlightRsoOptions.length === 0
+                ? 'Loading RSO list…'
+                : 'Pick an RSO to see its allocation history across years.'}
+            </p>
+          )}
         </section>
 
         <section className="panel types">

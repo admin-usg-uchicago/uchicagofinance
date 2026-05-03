@@ -146,7 +146,8 @@
   letter-spacing: 0.02em;
 }
 
-.alloc-topbar button {
+.alloc-topbar button,
+.alloc-topbar .topbar-btn {
   background: transparent;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.75);
@@ -154,10 +155,21 @@
   font-weight: 500;
   padding: 0.42rem 0.72rem;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: inherit;
+  font-family: inherit;
 }
 
-.alloc-topbar button:hover {
+.alloc-topbar button:hover,
+.alloc-topbar .topbar-btn:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+.alloc-topbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .stats {
@@ -497,6 +509,101 @@ input[type='range'] {
 
 .muted {
   opacity: 0.8;
+}
+
+.year-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.year-picker-row label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: 0.9rem;
+  gap: 0.35rem;
+  min-width: 200px;
+}
+
+.year-picker-row select {
+  font-size: 1rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #c9c9c9;
+  background: #fff;
+}
+
+.year-picker-row p {
+  margin: 0;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 240px;
+}
+
+.year-missing {
+  background: #fff7f7;
+  border: 1px solid #e7c8c8;
+  color: #5a1a1a;
+}
+
+.year-missing p {
+  margin: 0;
+}
+
+.spotlight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.spotlight-picker {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: 0.9rem;
+  gap: 0.35rem;
+  min-width: 260px;
+}
+
+.spotlight-picker select {
+  font-size: 1rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #c9c9c9;
+  background: #fff;
+}
+
+.yoy-panel .yoy-header {
+  margin-bottom: 0.5rem;
+}
+
+.yoy-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .yoy-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.event-list {
+  margin: 0;
+  padding-left: 1rem;
+  list-style: disc;
+}
+
+.event-list li {
+  margin: 0.15rem 0;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 900px) {
