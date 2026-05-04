@@ -1,0 +1,67 @@
+# Registered Google Sheets the loader can pull from.
+#
+# Adding an entry here tells the loader where to look. It does NOT grant Drive
+# access — each contributor's uchicago.edu account must still be share-listed
+# on the actual file in Google Drive.
+#
+# Fields per entry:
+#   key:         short identifier used on the command line (snake_case, unique)
+#   url:         full Google Sheets URL — must contain /d/<file_id>/
+#   description: one-line summary
+#   committee:   optional — committee that owns the sheet, if applicable
+#
+# Committee codes:
+#   cat   Committee on Academic Teams
+#   csf   Community Service Fund
+#   pcc   Program Coordinating Council
+#   scf   Sports Club Finance Committee
+#   sgfc  Student Government Finance Committee
+#
+# After editing this file, regenerate the human-readable index at repo root:
+#   python ingestion/load_sheet.py --regen-docs
+
+sources:
+  # Committee on Academic Teams
+  - key: cat_annall_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1L5fmjM3fATjv08jzrsROe6Oo6IfwXKrOuiUCAz0cw5k/edit?gid=0#gid=0
+    description: cat_annall_2025-2026
+    committee: cat
+
+  # Community Service Fund
+  - key: csf_annall_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1n6IAus-G6wqtBNUAMv5mcgIjl8ziu-McAqnU5W2_y_o/edit?gid=0#gid=0
+    description: csf_annall_2025-2026
+    committee: csf
+
+  - key: csf_recurring_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1b1W9P1auQIt3dzp2-bxPIa27ektY3nUryeWu4x22waU/edit?gid=0#gid=0
+    description: csf_recurring_2025-2026
+    committee: csf
+
+  # Program Coordinating Council
+  - key: pcc_annall_2025-2026
+    url: https://docs.google.com/spreadsheets/d/12YL9cvMsSXVQgwpPbZ1MW-p2-wpSPhbS51AKPLKkHEU/edit?gid=0#gid=0
+    description: pcc_annall_2025-2026
+    committee: pcc
+
+  # Sports Club Finance Committee
+  - key: scf_annall_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1UYWV52Xs6Q8L1N1wrdrf2-3t_u_tL5ozxMnAxcX7tDc/edit?gid=0#gid=0
+    description: scf_annall_2025-2026
+    committee: scf
+
+  - key: scf_recurring_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1JZENphbsmP_mMlEN8t_gD5sr9CjfY6sH9JlvBrXSP1k/edit?gid=2055939247#gid=2055939247
+    description: scf_recurring_2025-2026
+    committee: scf
+
+  # Student Government Finance Committee
+  - key: sgfc_annall_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1d0ckfnoHobP251pVqunVgF3pOPuZ9FzXSAUhmXtS5kk/edit?gid=0#gid=0
+    description: sgfc_annall_2025-2026
+    committee: sgfc
+
+  - key: sgfc_recurring_2025-2026
+    url: https://docs.google.com/spreadsheets/d/1f2n9PmRvkbiNfqvRUX3C3Vu_ja62RWk7xn0hmvRcuvs/edit?gid=0#gid=0
+    description: sgfc_yearly_2025-2026
+    committee: sgfc

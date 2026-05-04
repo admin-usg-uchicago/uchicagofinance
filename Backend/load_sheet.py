@@ -32,7 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SECRETS = REPO_ROOT / ".secrets"
 CLIENT_SECRETS = SECRETS / "oauth_client.json"
 TOKEN_CACHE = SECRETS / "authorized_user.json"
-SOURCES_YAML = REPO_ROOT / "ingestion" / "sources.yaml"
+SOURCES_YAML = Path(__file__).resolve().parent / "sources.yaml"
 ACCESSED_SHEETS_MD = REPO_ROOT / "Accessed_Sheets.md"
 DATA_DIR = REPO_ROOT / "data" / "raw"
 
