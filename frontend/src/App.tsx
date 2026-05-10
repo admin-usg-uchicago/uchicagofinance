@@ -1,24 +1,29 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import Plotly from 'plotly.js-dist-min'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Papa from 'papaparse'
-import type { Data, Layout } from 'plotly.js'
+import { BarChart } from '@mui/x-charts/BarChart'
+import { PieChart } from '@mui/x-charts/PieChart'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
 
+type Committee = 'cat' | 'csf' | 'pcc' | 'scf' | 'sgfc'
+
 type AnnualRow = {
   'RSO Name': string
+  Committee: Committee
+  Requested: string
   'Final Allocation': string
 }
 
 type YearlyRow = {
   'RSO Name': string
+  Committee: Committee
   'Request Description': string
   Type: string
   Requested: string
   'Final Allocation': string
 }
 
-type ChartMode = 'bar' | 'stacked' | 'donut' | 'treemap' | 'scatter3d'
+type ChartMode = 'bar' | 'stacked' | 'donut'
 type DatasetMode = 'combined' | 'annual' | 'yearly'
 type SortKey = 'rank' | 'name' | 'requested' | 'funded' | 'annual' | 'yearly'
 type SortDirection = 'asc' | 'desc'
@@ -37,6 +42,28 @@ const CURRENCY = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
+const COMMITTEES: Committee[] = ['sgfc', 'pcc', 'cat', 'scf', 'csf']
+const COMMITTEE_LABELS: Record<Committee, string> = {
+  cat: 'Committee on Academic Teams',
+  csf: 'Community Service Fund',
+  pcc: 'Program Coordinating Council',
+  scf: 'Sports Club Finance Committee',
+  sgfc: 'Student Government Finance Committee',
+}
+
+type StreamConfig = {
+  annualLabel: string
+  yearlyLabel: string | null
+}
+
+const STREAMS: Record<Committee, StreamConfig> = {
+  sgfc: { annualLabel: 'Main', yearlyLabel: 'Event/Travel' },
+  pcc:  { annualLabel: 'Annual', yearlyLabel: null },
+  cat:  { annualLabel: 'Annual', yearlyLabel: null },
+  scf:  { annualLabel: 'Annual', yearlyLabel: 'Quarterly' },
+  csf:  { annualLabel: 'Annual', yearlyLabel: 'Recurring' },
+}
+
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
   { label: 'About Us', path: '/about' },
@@ -47,35 +74,19 @@ const NAV_ITEMS = [
   { label: 'Allocations', path: '/allocations' },
 ]
 
-function PlotlyChart({
-  data,
-  layout,
-  height = 640,
-}: {
-  data: Partial<Data>[]
-  layout: Partial<Layout>
-  height?: number
-}) {
-  const chartRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const chartNode = chartRef.current
-    if (!chartNode) return
-
-    void Plotly.react(
-      chartNode,
-      data as Data[],
-      layout as Layout,
-      { responsive: true, displaylogo: false },
-    )
-
-    return () => {
-      Plotly.purge(chartNode)
-    }
-  }, [data, layout])
-
-  return <div ref={chartRef} style={{ width: '100%', height: `${height}px` }} />
-}
+const ANNUAL_COLOR = '#800000'
+const YEARLY_COLOR = '#c87373'
+const PIE_COLORS = [
+  '#800000',
+  '#9a2323',
+  '#b13a3a',
+  '#c75a5a',
+  '#d87d7d',
+  '#e69f9f',
+  '#efc0c0',
+  '#f5dcdc',
+  '#dddddd',
+]
 
 function SiteShell({ children }: { children: ReactNode }) {
   return (
@@ -309,6 +320,7 @@ function AllocationsPage() {
   const [selectedRso, setSelectedRso] = useState<string>('')
   const [chartMode, setChartMode] = useState<ChartMode>('bar')
   const [datasetMode, setDatasetMode] = useState<DatasetMode>('combined')
+  const [selectedCommittee, setSelectedCommittee] = useState<Committee>('sgfc')
   const [topCount, setTopCount] = useState(25)
   const [showAllRsos, setShowAllRsos] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -379,27 +391,48 @@ function AllocationsPage() {
     }
   }, [])
 
+  const filteredAnnualRows = useMemo(
+    () => annualRows.filter((row) => row.Committee === selectedCommittee),
+    [annualRows, selectedCommittee],
+  )
+  const filteredYearlyRows = useMemo(
+    () => yearlyRows.filter((row) => row.Committee === selectedCommittee),
+    [yearlyRows, selectedCommittee],
+  )
+  const stream = STREAMS[selectedCommittee]
+  const hasYearlyStream = stream.yearlyLabel !== null
+  const hasTypeBreakdown = selectedCommittee === 'sgfc'
+
+  useEffect(() => {
+    if (!hasYearlyStream && datasetMode !== 'annual') {
+      setDatasetMode('annual')
+    }
+    if (!hasTypeBreakdown && chartMode === 'donut') {
+      setChartMode('bar')
+    }
+  }, [hasYearlyStream, hasTypeBreakdown, datasetMode, chartMode])
+
   const totals = useMemo(() => {
-    const annual = annualRows.reduce(
+    const annual = filteredAnnualRows.reduce(
       (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
       0,
     )
-    const yearly = yearlyRows.reduce(
+    const yearly = filteredYearlyRows.reduce(
       (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
       0,
     )
     return { annual, yearly, combined: annual + yearly }
-  }, [annualRows, yearlyRows])
+  }, [filteredAnnualRows, filteredYearlyRows])
 
   const yearlyByType = useMemo(() => {
     const bucket = new Map<string, number>()
-    for (const row of yearlyRows) {
+    for (const row of filteredYearlyRows) {
       const type = (row.Type || 'Unspecified').trim() || 'Unspecified'
       const value = Number.parseFloat(row['Final Allocation'] || '0') || 0
       bucket.set(type, (bucket.get(type) ?? 0) + value)
     }
     return Array.from(bucket.entries()).sort((a, b) => b[1] - a[1])
-  }, [yearlyRows])
+  }, [filteredYearlyRows])
 
   const activeTotals = datasetMode === 'combined' ? totals.combined : datasetMode === 'annual' ? totals.annual : totals.yearly
 
@@ -409,7 +442,7 @@ function AllocationsPage() {
     const yearlyFundedMap = new Map<string, number>()
     const names = new Set<string>()
 
-    for (const row of annualRows) {
+    for (const row of filteredAnnualRows) {
       const name = row['RSO Name']?.trim()
       if (!name) continue
       names.add(name)
@@ -419,7 +452,7 @@ function AllocationsPage() {
       )
     }
 
-    for (const row of yearlyRows) {
+    for (const row of filteredYearlyRows) {
       const name = row['RSO Name']?.trim()
       if (!name) continue
       names.add(name)
@@ -446,7 +479,7 @@ function AllocationsPage() {
         totalFunded,
       }
     })
-  }, [annualRows, yearlyRows])
+  }, [filteredAnnualRows, filteredYearlyRows])
 
   const filteredAndSortedRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -481,171 +514,33 @@ function AllocationsPage() {
     return sortDirection === 'desc' ? ' \u2193' : ' \u2191'
   }
 
-  const chartFigure = useMemo(() => {
+  const mainChartData = useMemo(() => {
     const effectiveTopCount = showAllRsos ? filteredAndSortedRows.length : topCount
     const topRows = filteredAndSortedRows.slice(0, effectiveTopCount)
     const names = topRows.map((row) => row.name)
     const annualValues = topRows.map((row) => row.annualFunded)
     const yearlyValues = topRows.map((row) => row.yearlyFunded)
     const totalValues = topRows.map((row) => row.totalFunded)
-
     const activeValues =
       datasetMode === 'combined' ? totalValues : datasetMode === 'annual' ? annualValues : yearlyValues
+    const activeLabel =
+      datasetMode === 'combined'
+        ? `${stream.annualLabel} + ${stream.yearlyLabel ?? ''}`
+        : datasetMode === 'annual'
+          ? stream.annualLabel
+          : stream.yearlyLabel ?? ''
 
-    if (chartMode === 'donut') {
-      const topTypes = yearlyByType.slice(0, 8)
-      const remaining = yearlyByType.slice(8).reduce((sum, [, value]) => sum + value, 0)
-      const labels = topTypes.map(([type]) => type)
-      const values = topTypes.map(([, value]) => value)
-      if (remaining > 0) {
-        labels.push('Other')
-        values.push(remaining)
-      }
-      return {
-        data: [
-          {
-            type: 'pie',
-            labels,
-            values,
-            hole: 0.52,
-            sort: false,
-            marker: {
-              colors: [
-                '#800000',
-                '#9a2323',
-                '#b13a3a',
-                '#c75a5a',
-                '#d87d7d',
-                '#e69f9f',
-                '#efc0c0',
-                '#f5dcdc',
-                '#dddddd',
-              ],
-            },
-            textinfo: 'label+percent',
-          },
-        ],
-        layout: {
-          title: { text: 'Yearly Allocation Mix by Request Type' },
-        },
-      }
+    const topTypes = yearlyByType.slice(0, 8)
+    const remaining = yearlyByType.slice(8).reduce((sum, [, value]) => sum + value, 0)
+    const donutData: { id: number; value: number; label: string }[] = topTypes.map(
+      ([type, value], idx) => ({ id: idx, value, label: type }),
+    )
+    if (remaining > 0) {
+      donutData.push({ id: donutData.length, value: remaining, label: 'Other' })
     }
 
-    if (chartMode === 'stacked') {
-      return {
-        data: [
-          {
-            type: 'bar',
-            x: names,
-            y: annualValues,
-            name: 'Annual Funded',
-            marker: { color: '#800000' },
-          },
-          {
-            type: 'bar',
-            x: names,
-            y: yearlyValues,
-            name: 'Yearly Funded',
-            marker: { color: '#c87373' },
-          },
-        ],
-        layout: {
-          title: { text: 'Annual vs Yearly Funded by RSO' },
-          barmode: 'stack',
-          xaxis: { tickangle: -35 },
-          yaxis: { title: { text: 'Funded Amount (USD)' } },
-        },
-      }
-    }
-
-    if (chartMode === 'treemap') {
-      return {
-        data: [
-          {
-            type: 'treemap',
-            labels: names,
-            parents: names.map(() => ''),
-            values: activeValues,
-            marker: {
-              colors: activeValues,
-              colorscale: 'Reds',
-            },
-          },
-        ],
-        layout: {
-          title: {
-            text:
-              datasetMode === 'combined'
-                ? 'Treemap: Combined Funded Allocations'
-                : datasetMode === 'annual'
-                  ? 'Treemap: Annual Funded Allocations'
-                  : 'Treemap: Yearly Funded Allocations',
-          },
-        },
-      }
-    }
-
-    if (chartMode === 'scatter3d') {
-      return {
-        data: [
-          {
-            type: 'scatter3d',
-            mode: 'markers',
-            x: annualValues,
-            y: yearlyValues,
-            z: totalValues,
-            text: names.map(
-              (name, idx) =>
-                `${name}<br>Annual: ${CURRENCY.format(annualValues[idx])}<br>Yearly: ${CURRENCY.format(yearlyValues[idx])}<br>Total: ${CURRENCY.format(totalValues[idx])}`,
-            ),
-            marker: {
-              size: totalValues.map((value) => Math.max(5, Math.min(16, value / 950))),
-              color: totalValues,
-              colorscale: 'Reds',
-              opacity: 0.78,
-            },
-            hovertemplate: '%{text}<extra></extra>',
-          },
-        ],
-        layout: {
-          title: { text: '3D Relationship: Annual vs Yearly vs Total' },
-          scene: {
-            xaxis: { title: { text: 'Annual Funded' } },
-            yaxis: { title: { text: 'Yearly Funded' } },
-            zaxis: { title: { text: 'Total Funded' } },
-          },
-        },
-      }
-    }
-
-    return {
-      data: [
-        {
-          type: 'bar',
-          y: names,
-          x: activeValues,
-          orientation: 'h',
-          marker: {
-            color: activeValues,
-            colorscale: 'Reds',
-          },
-          hovertemplate: '%{y}<br>%{x:$,.0f}<extra></extra>',
-        },
-      ],
-      layout: {
-        title: {
-          text:
-            datasetMode === 'combined'
-              ? 'Top RSOs by Combined Funded Allocation'
-              : datasetMode === 'annual'
-                ? 'Top RSOs by Annual Funded Allocation'
-                : 'Top RSOs by Yearly Funded Allocation',
-        },
-        xaxis: { title: { text: 'Funded Amount (USD)' } },
-        yaxis: { automargin: true },
-      },
-    }
-  }, [filteredAndSortedRows, topCount, showAllRsos, datasetMode, chartMode, yearlyByType])
+    return { names, annualValues, yearlyValues, activeValues, activeLabel, donutData }
+  }, [filteredAndSortedRows, topCount, showAllRsos, datasetMode, yearlyByType, stream])
 
   const displayedTableRows = useMemo(
     () => filteredAndSortedRows.slice(0, showAllRsos ? filteredAndSortedRows.length : topCount),
@@ -656,43 +551,28 @@ function AllocationsPage() {
     return HISTORY_YEARS.map(({ year }) => {
       const bundle = allYearsData.get(year)
       if (!bundle) return { year, annual: 0, yearly: 0, combined: 0, available: false }
-      const annual = bundle.annual.reduce(
-        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
-        0,
-      )
-      const yearly = bundle.yearly.reduce(
-        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
-        0,
-      )
+      const annual = bundle.annual
+        .filter((row) => row.Committee === selectedCommittee)
+        .reduce(
+          (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+          0,
+        )
+      const yearly = bundle.yearly
+        .filter((row) => row.Committee === selectedCommittee)
+        .reduce(
+          (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+          0,
+        )
       return { year, annual, yearly, combined: annual + yearly, available: true }
     })
-  }, [allYearsData])
+  }, [allYearsData, selectedCommittee])
 
   const yoyChart = useMemo(() => {
     const available = yoyTotals.filter((row) => row.available)
     return {
-      data: [
-        {
-          type: 'bar',
-          x: available.map((row) => row.year),
-          y: available.map((row) => row.annual),
-          name: 'Annual',
-          marker: { color: '#800000' },
-        },
-        {
-          type: 'bar',
-          x: available.map((row) => row.year),
-          y: available.map((row) => row.yearly),
-          name: 'Yearly',
-          marker: { color: '#c87373' },
-        },
-      ] as Partial<Data>[],
-      layout: {
-        barmode: 'stack',
-        showlegend: true,
-        legend: { orientation: 'h', y: -0.2 },
-        yaxis: { title: { text: 'Funded (USD)' } },
-      } as Partial<Layout>,
+      years: available.map((row) => row.year),
+      annual: available.map((row) => row.annual),
+      yearly: available.map((row) => row.yearly),
     }
   }, [yoyTotals])
 
@@ -700,16 +580,24 @@ function AllocationsPage() {
     const names = new Set<string>()
     for (const [, bundle] of allYearsData) {
       for (const row of bundle.annual) {
+        if (row.Committee !== selectedCommittee) continue
         const name = row['RSO Name']?.trim()
         if (name) names.add(name)
       }
       for (const row of bundle.yearly) {
+        if (row.Committee !== selectedCommittee) continue
         const name = row['RSO Name']?.trim()
         if (name) names.add(name)
       }
     }
     return Array.from(names).sort((a, b) => a.localeCompare(b))
-  }, [allYearsData])
+  }, [allYearsData, selectedCommittee])
+
+  useEffect(() => {
+    if (selectedRso && !spotlightRsoOptions.includes(selectedRso)) {
+      setSelectedRso('')
+    }
+  }, [spotlightRsoOptions, selectedRso])
 
   const spotlightByYear = useMemo(() => {
     if (!selectedRso) return []
@@ -719,46 +607,69 @@ function AllocationsPage() {
         return { year, available: false, annual: 0, yearly: 0, events: [] as YearlyRow[] }
       }
       const annual = bundle.annual
-        .filter((row) => row['RSO Name']?.trim() === selectedRso)
+        .filter((row) => row.Committee === selectedCommittee && row['RSO Name']?.trim() === selectedRso)
         .reduce(
           (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
           0,
         )
-      const events = bundle.yearly.filter((row) => row['RSO Name']?.trim() === selectedRso)
+      const events = bundle.yearly.filter(
+        (row) => row.Committee === selectedCommittee && row['RSO Name']?.trim() === selectedRso,
+      )
       const yearly = events.reduce(
         (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
         0,
       )
       return { year, available: true, annual, yearly, events }
     })
-  }, [allYearsData, selectedRso])
+  }, [allYearsData, selectedRso, selectedCommittee])
+
+  const specialtyCards = useMemo(() => {
+    return COMMITTEES.filter((c) => c !== selectedCommittee).map((code) => {
+      const cStream = STREAMS[code]
+      const annualForC = annualRows.filter((row) => row.Committee === code)
+      const yearlyForC = yearlyRows.filter((row) => row.Committee === code)
+      const annualSum = annualForC.reduce(
+        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+        0,
+      )
+      const yearlySum = yearlyForC.reduce(
+        (sum, row) => sum + (Number.parseFloat(row['Final Allocation'] || '0') || 0),
+        0,
+      )
+      const perRso = new Map<string, number>()
+      for (const row of annualForC) {
+        const name = row['RSO Name']?.trim()
+        if (!name) continue
+        perRso.set(name, (perRso.get(name) ?? 0) + (Number.parseFloat(row['Final Allocation'] || '0') || 0))
+      }
+      for (const row of yearlyForC) {
+        const name = row['RSO Name']?.trim()
+        if (!name) continue
+        perRso.set(name, (perRso.get(name) ?? 0) + (Number.parseFloat(row['Final Allocation'] || '0') || 0))
+      }
+      const topRsos = Array.from(perRso.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      return {
+        code,
+        name: COMMITTEE_LABELS[code],
+        stream: cStream,
+        annualSum,
+        yearlySum,
+        rsoCount: perRso.size,
+        topRsos,
+      }
+    })
+  }, [annualRows, yearlyRows, selectedCommittee])
 
   const spotlightChart = useMemo(() => {
     const available = spotlightByYear.filter((row) => row.available)
     return {
-      data: [
-        {
-          type: 'bar',
-          x: available.map((row) => row.year),
-          y: available.map((row) => row.annual),
-          name: 'Annual Funded',
-          marker: { color: '#800000' },
-        },
-        {
-          type: 'bar',
-          x: available.map((row) => row.year),
-          y: available.map((row) => row.yearly),
-          name: 'Yearly Funded',
-          marker: { color: '#c87373' },
-        },
-      ] as Partial<Data>[],
-      layout: {
-        title: { text: selectedRso ? `${selectedRso} — Funding Over Years` : 'Pick an RSO' },
-        barmode: 'stack',
-        yaxis: { title: { text: 'Funded Amount (USD)' } },
-      } as Partial<Layout>,
+      years: available.map((row) => row.year),
+      annual: available.map((row) => row.annual),
+      yearly: available.map((row) => row.yearly),
     }
-  }, [spotlightByYear, selectedRso])
+  }, [spotlightByYear])
 
   return (
     <>
@@ -770,23 +681,29 @@ function AllocationsPage() {
               <button type="button">Export CSV</button>
             </div>
           </div>
-          <h2>USG Allocation Intelligence Dashboard</h2>
+          <h2>{COMMITTEE_LABELS[selectedCommittee]}</h2>
           <p>
-            Track annual and event-based RSO allocations with polished analytics, searchable records, and sortable ranking views.
+            {hasYearlyStream
+              ? `${stream.annualLabel} allocations plus ${stream.yearlyLabel?.toLowerCase()} funding for ${selectedYear}.`
+              : `${stream.annualLabel} allocations for ${selectedYear}. This committee operates on a single stream.`}
           </p>
           <div className="stats">
             <article>
-              <h3>Annual Final Allocation · {selectedYear}</h3>
+              <h3>{stream.annualLabel} · {selectedYear}</h3>
               <p>{CURRENCY.format(totals.annual)}</p>
             </article>
-            <article>
-              <h3>Yearly Final Allocation · {selectedYear}</h3>
-              <p>{CURRENCY.format(totals.yearly)}</p>
-            </article>
-            <article>
-              <h3>Combined Tracked Total · {selectedYear}</h3>
-              <p>{CURRENCY.format(totals.combined)}</p>
-            </article>
+            {hasYearlyStream ? (
+              <>
+                <article>
+                  <h3>{stream.yearlyLabel} · {selectedYear}</h3>
+                  <p>{CURRENCY.format(totals.yearly)}</p>
+                </article>
+                <article>
+                  <h3>{COMMITTEE_LABELS[selectedCommittee].split(' ')[0]} Total · {selectedYear}</h3>
+                  <p>{CURRENCY.format(totals.combined)}</p>
+                </article>
+              </>
+            ) : null}
           </div>
         </div>
       </section>
@@ -817,30 +734,41 @@ function AllocationsPage() {
         <section className="panel yoy-panel">
           <div className="yoy-header">
             <div>
-              <h3>Year-over-Year Totals</h3>
-              <p className="muted">Combined RSO funding across all loaded academic years.</p>
+              <h3>{COMMITTEE_LABELS[selectedCommittee]} — Year over Year</h3>
+              <p className="muted">
+                {hasYearlyStream
+                  ? `${stream.annualLabel} + ${stream.yearlyLabel} totals across all loaded academic years.`
+                  : `${stream.annualLabel} totals across all loaded academic years.`}
+              </p>
             </div>
           </div>
           <div className="yoy-body">
-            <PlotlyChart
-              data={yoyChart.data}
-              height={240}
-              layout={{
-                ...yoyChart.layout,
-                paper_bgcolor: '#ffffff',
-                plot_bgcolor: '#ffffff',
-                margin: { l: 60, r: 10, b: 30, t: 10 },
-                font: { family: 'Open Sans, Arial, sans-serif', color: '#2d2d2d' },
-              }}
-            />
+            <div className="chart-host" style={{ height: 240 }}>
+              <BarChart
+                xAxis={[{ scaleType: 'band', data: yoyChart.years }]}
+                yAxis={[{ valueFormatter: (v: number) => CURRENCY.format(v) }]}
+                series={
+                  hasYearlyStream
+                    ? [
+                        { data: yoyChart.annual, label: stream.annualLabel, stack: 'yoy', color: ANNUAL_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                        { data: yoyChart.yearly, label: stream.yearlyLabel ?? '', stack: 'yoy', color: YEARLY_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                      ]
+                    : [
+                        { data: yoyChart.annual, label: stream.annualLabel, color: ANNUAL_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                      ]
+                }
+                height={240}
+                margin={{ left: 70, right: 16, top: 16, bottom: 30 }}
+              />
+            </div>
             <div className="table-wrap">
               <table className="alloc-table">
                 <thead>
                   <tr>
                     <th>Year</th>
-                    <th>Annual</th>
-                    <th>Yearly</th>
-                    <th>Combined</th>
+                    <th>{stream.annualLabel}</th>
+                    {hasYearlyStream ? <th>{stream.yearlyLabel}</th> : null}
+                    {hasYearlyStream ? <th>Total</th> : null}
                   </tr>
                 </thead>
                 <tbody>
@@ -848,8 +776,12 @@ function AllocationsPage() {
                     <tr key={row.year}>
                       <td>{row.year}</td>
                       <td>{row.available ? CURRENCY.format(row.annual) : '—'}</td>
-                      <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
-                      <td>{row.available ? CURRENCY.format(row.combined) : '—'}</td>
+                      {hasYearlyStream ? (
+                        <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
+                      ) : null}
+                      {hasYearlyStream ? (
+                        <td>{row.available ? CURRENCY.format(row.combined) : '—'}</td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
@@ -862,21 +794,38 @@ function AllocationsPage() {
           <h3>Dashboard Controls</h3>
           <div className="control-grid">
             <label>
-              Dataset
-              <select value={datasetMode} onChange={(event) => setDatasetMode(event.target.value as DatasetMode)}>
-                <option value="combined">Combined (Annual + Yearly)</option>
-                <option value="annual">Annual only</option>
-                <option value="yearly">Yearly only</option>
+              Primary committee
+              <select
+                value={selectedCommittee}
+                onChange={(event) =>
+                  setSelectedCommittee(event.target.value as Committee)
+                }
+              >
+                {COMMITTEES.map((code) => (
+                  <option key={code} value={code}>
+                    {COMMITTEE_LABELS[code]}
+                  </option>
+                ))}
               </select>
             </label>
+            {hasYearlyStream ? (
+              <label>
+                Dataset
+                <select value={datasetMode} onChange={(event) => setDatasetMode(event.target.value as DatasetMode)}>
+                  <option value="combined">Combined ({stream.annualLabel} + {stream.yearlyLabel})</option>
+                  <option value="annual">{stream.annualLabel} only</option>
+                  <option value="yearly">{stream.yearlyLabel} only</option>
+                </select>
+              </label>
+            ) : null}
             <label>
               Chart Mode
               <select value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
                 <option value="bar">Ranked Horizontal Bar</option>
-                <option value="stacked">Stacked Annual + Yearly Bars</option>
-                <option value="donut">Donut (Request Type Mix)</option>
-                <option value="treemap">Treemap (Allocation Footprint)</option>
-                <option value="scatter3d">3D Relationship (Optional)</option>
+                {hasYearlyStream ? (
+                  <option value="stacked">Stacked {stream.annualLabel} + {stream.yearlyLabel} Bars</option>
+                ) : null}
+                {hasTypeBreakdown ? <option value="donut">Donut (Request Type Mix)</option> : null}
               </select>
             </label>
             <label>
@@ -941,18 +890,65 @@ function AllocationsPage() {
         <section className="panel chart">
           {loading ? (
             <p className="loading">Loading allocation data...</p>
+          ) : chartMode === 'donut' ? (
+            <>
+              <h3 className="chart-title">{stream.yearlyLabel} Allocation Mix by Request Type</h3>
+              <div className="chart-host" style={{ height: 520 }}>
+                <PieChart
+                  series={[
+                    {
+                      data: mainChartData.donutData,
+                      innerRadius: 100,
+                      outerRadius: 200,
+                      paddingAngle: 1.5,
+                      cornerRadius: 4,
+                      arcLabel: (item) => `${item.label}`,
+                      arcLabelMinAngle: 18,
+                      valueFormatter: (item) => CURRENCY.format(item.value),
+                    },
+                  ]}
+                  colors={PIE_COLORS}
+                  height={520}
+                />
+              </div>
+            </>
+          ) : chartMode === 'stacked' ? (
+            <>
+              <h3 className="chart-title">{stream.annualLabel} vs {stream.yearlyLabel} Funded by RSO</h3>
+              <div className="chart-host" style={{ height: 520 }}>
+                <BarChart
+                  xAxis={[{ scaleType: 'band', data: mainChartData.names, tickLabelStyle: { angle: -35, textAnchor: 'end', fontSize: 11 } }]}
+                  yAxis={[{ valueFormatter: (v: number) => CURRENCY.format(v), label: 'Funded Amount (USD)' }]}
+                  series={[
+                    { data: mainChartData.annualValues, label: `${stream.annualLabel} Funded`, stack: 'rso', color: ANNUAL_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                    { data: mainChartData.yearlyValues, label: `${stream.yearlyLabel} Funded`, stack: 'rso', color: YEARLY_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                  ]}
+                  height={520}
+                  margin={{ left: 80, right: 16, top: 24, bottom: 100 }}
+                />
+              </div>
+            </>
           ) : (
-            <PlotlyChart
-              data={chartFigure.data as Partial<Data>[]}
-              height={520}
-              layout={{
-                ...chartFigure.layout,
-                paper_bgcolor: '#ffffff',
-                plot_bgcolor: '#ffffff',
-                margin: { l: 0, r: 0, b: 0, t: 42 },
-                font: { family: 'Open Sans, Arial, sans-serif', color: '#2d2d2d' },
-              } as Partial<Layout>}
-            />
+            <>
+              <h3 className="chart-title">Top RSOs by {mainChartData.activeLabel} Funded</h3>
+              <div className="chart-host" style={{ height: Math.max(520, mainChartData.names.length * 22) }}>
+                <BarChart
+                  layout="horizontal"
+                  yAxis={[{ scaleType: 'band', data: mainChartData.names, tickLabelStyle: { fontSize: 11 } }]}
+                  xAxis={[{ valueFormatter: (v: number) => CURRENCY.format(v), label: 'Funded Amount (USD)' }]}
+                  series={[
+                    {
+                      data: mainChartData.activeValues,
+                      label: `${mainChartData.activeLabel} Funded`,
+                      color: ANNUAL_COLOR,
+                      valueFormatter: (v) => CURRENCY.format((v as number) ?? 0),
+                    },
+                  ]}
+                  height={Math.max(520, mainChartData.names.length * 22)}
+                  margin={{ left: 220, right: 24, top: 24, bottom: 50 }}
+                />
+              </div>
+            </>
           )}
         </section>
 
@@ -980,9 +976,13 @@ function AllocationsPage() {
                 <tr>
                   <th onClick={() => handleHeaderSort('rank')} className="sortable">Rank{sortIndicator('rank')}</th>
                   <th onClick={() => handleHeaderSort('name')} className="sortable">RSO{sortIndicator('name')}</th>
-                  <th onClick={() => handleHeaderSort('requested')} className="sortable">Yearly Requested{sortIndicator('requested')}</th>
-                  <th onClick={() => handleHeaderSort('yearly')} className="sortable">Yearly Funded{sortIndicator('yearly')}</th>
-                  <th onClick={() => handleHeaderSort('annual')} className="sortable">Annual Funded{sortIndicator('annual')}</th>
+                  {hasYearlyStream ? (
+                    <th onClick={() => handleHeaderSort('requested')} className="sortable">{stream.yearlyLabel} Requested{sortIndicator('requested')}</th>
+                  ) : null}
+                  {hasYearlyStream ? (
+                    <th onClick={() => handleHeaderSort('yearly')} className="sortable">{stream.yearlyLabel} Funded{sortIndicator('yearly')}</th>
+                  ) : null}
+                  <th onClick={() => handleHeaderSort('annual')} className="sortable">{stream.annualLabel} Funded{sortIndicator('annual')}</th>
                   <th onClick={() => handleHeaderSort('funded')} className="sortable">Total Funded{sortIndicator('funded')}</th>
                 </tr>
               </thead>
@@ -991,8 +991,8 @@ function AllocationsPage() {
                   <tr key={row.name}>
                     <td>{row.rank}</td>
                     <td>{row.name}</td>
-                    <td>{CURRENCY.format(row.yearlyRequested)}</td>
-                    <td>{CURRENCY.format(row.yearlyFunded)}</td>
+                    {hasYearlyStream ? <td>{CURRENCY.format(row.yearlyRequested)}</td> : null}
+                    {hasYearlyStream ? <td>{CURRENCY.format(row.yearlyFunded)}</td> : null}
                     <td>{CURRENCY.format(row.annualFunded)}</td>
                     <td>{CURRENCY.format(row.totalFunded)}</td>
                   </tr>
@@ -1025,26 +1025,34 @@ function AllocationsPage() {
 
           {selectedRso ? (
             <>
-              <PlotlyChart
-                data={spotlightChart.data}
-                height={360}
-                layout={{
-                  ...spotlightChart.layout,
-                  paper_bgcolor: '#ffffff',
-                  plot_bgcolor: '#ffffff',
-                  margin: { l: 60, r: 20, b: 60, t: 50 },
-                  font: { family: 'Open Sans, Arial, sans-serif', color: '#2d2d2d' },
-                }}
-              />
+              <h4 className="chart-title">{selectedRso} — Funding Over Years</h4>
+              <div className="chart-host" style={{ height: 360 }}>
+                <BarChart
+                  xAxis={[{ scaleType: 'band', data: spotlightChart.years }]}
+                  yAxis={[{ valueFormatter: (v: number) => CURRENCY.format(v), label: 'Funded Amount (USD)' }]}
+                  series={
+                    hasYearlyStream
+                      ? [
+                          { data: spotlightChart.annual, label: `${stream.annualLabel} Funded`, stack: 'spot', color: ANNUAL_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                          { data: spotlightChart.yearly, label: `${stream.yearlyLabel} Funded`, stack: 'spot', color: YEARLY_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                        ]
+                      : [
+                          { data: spotlightChart.annual, label: `${stream.annualLabel} Funded`, color: ANNUAL_COLOR, valueFormatter: (v) => CURRENCY.format((v as number) ?? 0) },
+                        ]
+                  }
+                  height={360}
+                  margin={{ left: 80, right: 24, top: 24, bottom: 50 }}
+                />
+              </div>
               <div className="table-wrap">
                 <table className="alloc-table">
                   <thead>
                     <tr>
                       <th>Year</th>
-                      <th>Annual Funded</th>
-                      <th>Yearly Funded</th>
-                      <th>Combined</th>
-                      <th>Yearly Events</th>
+                      <th>{stream.annualLabel} Funded</th>
+                      {hasYearlyStream ? <th>{stream.yearlyLabel} Funded</th> : null}
+                      {hasYearlyStream ? <th>Total</th> : null}
+                      {hasYearlyStream ? <th>{stream.yearlyLabel} Events</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -1052,25 +1060,33 @@ function AllocationsPage() {
                       <tr key={row.year}>
                         <td>{row.year}</td>
                         <td>{row.available ? CURRENCY.format(row.annual) : '—'}</td>
-                        <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
-                        <td>{row.available ? CURRENCY.format(row.annual + row.yearly) : '—'}</td>
-                        <td>
-                          {row.available && row.events.length > 0 ? (
-                            <ul className="event-list">
-                              {row.events.map((event, idx) => (
-                                <li key={`${row.year}-${idx}`}>
-                                  <strong>{event['Request Description'] || '(no description)'}</strong>
-                                  <span className="muted"> · {event.Type || 'Unspecified'}</span>
-                                  <span> — req {CURRENCY.format(Number.parseFloat(event.Requested || '0') || 0)}, funded {CURRENCY.format(Number.parseFloat(event['Final Allocation'] || '0') || 0)}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : row.available ? (
-                            <span className="muted">No events</span>
-                          ) : (
-                            <span className="muted">No data</span>
-                          )}
-                        </td>
+                        {hasYearlyStream ? (
+                          <td>{row.available ? CURRENCY.format(row.yearly) : '—'}</td>
+                        ) : null}
+                        {hasYearlyStream ? (
+                          <td>{row.available ? CURRENCY.format(row.annual + row.yearly) : '—'}</td>
+                        ) : null}
+                        {hasYearlyStream ? (
+                          <td>
+                            {row.available && row.events.length > 0 ? (
+                              <ul className="event-list">
+                                {row.events.map((event, idx) => (
+                                  <li key={`${row.year}-${idx}`}>
+                                    <strong>{event['Request Description'] || '(no description)'}</strong>
+                                    {hasTypeBreakdown ? (
+                                      <span className="muted"> · {event.Type || 'Unspecified'}</span>
+                                    ) : null}
+                                    <span> — req {CURRENCY.format(Number.parseFloat(event.Requested || '0') || 0)}, funded {CURRENCY.format(Number.parseFloat(event['Final Allocation'] || '0') || 0)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : row.available ? (
+                              <span className="muted">No events</span>
+                            ) : (
+                              <span className="muted">No data</span>
+                            )}
+                          </td>
+                        ) : null}
                       </tr>
                     ))}
                   </tbody>
@@ -1086,15 +1102,75 @@ function AllocationsPage() {
           )}
         </section>
 
-        <section className="panel types">
-          <h3>Yearly Allocation by Request Type</h3>
-          <div className="type-grid">
-            {yearlyByType.map(([type, value]) => (
-              <article key={type}>
-                <h4>{type}</h4>
-                <p>{CURRENCY.format(value)}</p>
-              </article>
-            ))}
+        {hasTypeBreakdown ? (
+          <section className="panel types">
+            <h3>{stream.yearlyLabel} Allocation by Request Type</h3>
+            <div className="type-grid">
+              {yearlyByType.map(([type, value]) => (
+                <article key={type}>
+                  <h4>{type}</h4>
+                  <p>{CURRENCY.format(value)}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="panel specialty-panel">
+          <div className="specialty-header">
+            <h3>Other Funding Streams · {selectedYear}</h3>
+            <p className="muted">
+              Each committee operates its own pool. Click a card to make it the primary view.
+            </p>
+          </div>
+          <div className="specialty-grid">
+            {specialtyCards.map((card) => {
+              const total = card.annualSum + card.yearlySum
+              const hasYearly = card.stream.yearlyLabel !== null
+              return (
+                <button
+                  type="button"
+                  key={card.code}
+                  className="specialty-card"
+                  onClick={() => setSelectedCommittee(card.code)}
+                >
+                  <div className="specialty-card-head">
+                    <span className="specialty-code">{card.code.toUpperCase()}</span>
+                    <span className="specialty-total">{CURRENCY.format(total)}</span>
+                  </div>
+                  <h4>{card.name}</h4>
+                  <dl className="specialty-stats">
+                    <div>
+                      <dt>{card.stream.annualLabel}</dt>
+                      <dd>{CURRENCY.format(card.annualSum)}</dd>
+                    </div>
+                    {hasYearly ? (
+                      <div>
+                        <dt>{card.stream.yearlyLabel}</dt>
+                        <dd>{CURRENCY.format(card.yearlySum)}</dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt>RSOs</dt>
+                      <dd>{card.rsoCount}</dd>
+                    </div>
+                  </dl>
+                  {card.topRsos.length > 0 ? (
+                    <ol className="specialty-top">
+                      {card.topRsos.map(([name, value]) => (
+                        <li key={name}>
+                          <span className="specialty-top-name">{name}</span>
+                          <span className="specialty-top-value">{CURRENCY.format(value)}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="muted">No data for {selectedYear}.</p>
+                  )}
+                  <span className="specialty-cta">View this committee →</span>
+                </button>
+              )
+            })}
           </div>
         </section>
       </main>

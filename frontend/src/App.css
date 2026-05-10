@@ -606,6 +606,150 @@ input[type='range'] {
   font-size: 0.9rem;
 }
 
+.chart-title {
+  font-size: 1rem;
+  margin: 0 0 0.6rem;
+  color: #2d2d2d;
+  font-weight: 600;
+}
+
+.chart-host {
+  width: 100%;
+}
+
+.specialty-panel .specialty-header {
+  margin-bottom: 1rem;
+}
+
+.specialty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.specialty-card {
+  background: #ffffff;
+  border: 1px solid #e6dada;
+  border-radius: 10px;
+  padding: 1rem 1.1rem 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.specialty-card:hover {
+  border-color: #800000;
+  box-shadow: 0 6px 18px rgba(128, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.specialty-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.specialty-code {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #800000;
+  text-transform: uppercase;
+}
+
+.specialty-total {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2d2d2d;
+}
+
+.specialty-card h4 {
+  font-size: 1rem;
+  margin: 0;
+  color: #2d2d2d;
+  line-height: 1.25;
+}
+
+.specialty-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.specialty-stats > div {
+  background: #faf5f5;
+  border-radius: 6px;
+  padding: 0.4rem 0.55rem;
+}
+
+.specialty-stats dt {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6a6a6a;
+  margin: 0;
+}
+
+.specialty-stats dd {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d2d2d;
+  margin: 0.1rem 0 0;
+}
+
+.specialty-top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  counter-reset: specialty-rank;
+}
+
+.specialty-top li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  counter-increment: specialty-rank;
+}
+
+.specialty-top li::before {
+  content: counter(specialty-rank) ".";
+  color: #800000;
+  font-weight: 600;
+  width: 1.2rem;
+  flex-shrink: 0;
+}
+
+.specialty-top-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #2d2d2d;
+}
+
+.specialty-top-value {
+  color: #6a6a6a;
+  font-variant-numeric: tabular-nums;
+}
+
+.specialty-cta {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: #800000;
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   .identity {
     min-height: 110px;
