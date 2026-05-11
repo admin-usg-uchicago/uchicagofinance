@@ -50,6 +50,7 @@ class Source:
     url: str
     description: str
     committee: str | None = None
+    worksheets: tuple[str, ...] | None = None
 
     @property
     def file_id(self) -> str:
@@ -70,6 +71,7 @@ def load_sources() -> list[Source]:
             url=e["url"],
             description=e.get("description", ""),
             committee=e.get("committee"),
+            worksheets=tuple(e["worksheets"]) if e.get("worksheets") else None,
         )
         for e in entries
     ]
@@ -174,6 +176,21 @@ def dump_to_csv(key: str, tabs: dict[str, pd.DataFrame]) -> list[tuple[Path, int
     return written
 
 
+def _filter_worksheets(
+    tabs: dict[str, pd.DataFrame], worksheets: tuple[str, ...] | None, key: str
+) -> dict[str, pd.DataFrame]:
+    if not worksheets:
+        return tabs
+    missing = [w for w in worksheets if w not in tabs]
+    if missing:
+        available = ", ".join(repr(t) for t in tabs)
+        raise RuntimeError(
+            f"source {key!r}: worksheets not found in sheet: {missing}. "
+            f"Available tabs: {available}"
+        )
+    return {w: tabs[w] for w in worksheets}
+
+
 def render_markdown(sources: list[Source]) -> str:
     lines = [
         "<!-- AUTO-GENERATED FROM ingestion/sources.yaml — DO NOT EDIT BY HAND -->",
@@ -253,6 +270,7 @@ def cmd_pull_all(sources: list[Source]) -> int:
         try:
             tabs = load_sheet(s.file_id)
             assert isinstance(tabs, dict)
+            tabs = _filter_worksheets(tabs, s.worksheets, s.key)
             for path, rows, cols in dump_to_csv(s.key, tabs):
                 print(f"  wrote {path.relative_to(REPO_ROOT)}  ({rows} rows × {cols} cols)")
         except Exception as e:  # noqa: BLE001
@@ -273,6 +291,8 @@ def cmd_pull_one(arg: str, worksheet: str | None, want_csv: bool, sources: list[
     if want_csv:
         tabs = load_sheet(file_id)
         assert isinstance(tabs, dict)
+        if source is not None:
+            tabs = _filter_worksheets(tabs, source.worksheets, source.key)
         for path, rows, cols in dump_to_csv(key, tabs):
             print(f"wrote {path.relative_to(REPO_ROOT)}  ({rows} rows × {cols} cols)")
         return 0

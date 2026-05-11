@@ -18,8 +18,7 @@ python ingestion/load_sheet.py <key>
 
 | Key | Description | Committee | Link |
 | --- | --- | --- | --- |
-| `sgfc_annall_2025-2026` | sgfc_ annall_2025-2026 | — | [open](https://docs.google.com/spreadsheets/d/1d0ckfnoHobP251pVqunVgF3pOPuZ9FzXSAUhmXtS5kk/edit?gid=0#gid=0) |
-| `sgfc_yearly_2025-2026` | sgfc_yearly_2025-2026 | — | [open](https://docs.google.com/spreadsheets/d/1f2n9PmRvkbiNfqvRUX3C3Vu_ja62RWk7xn0hmvRcuvs/edit?gid=0#gid=0) |
+| `central_2025-2026` | USG central allocation log (annual + recurring, all committees) | — | [open](https://docs.google.com/spreadsheets/d/1LQMgOsSS7YU9HgQH0V5BAPlgASOOSmleO3pkIxzJye8/edit?gid=0#gid=0) |
 
 ## Adding a new sheet
 
