@@ -12,9 +12,19 @@ export type RecurringRow = AnnualRow & {
   type: string
 }
 
+export type BudgetRow = {
+  account: string
+  beginningBalance: number
+  allocated2526: number
+  expenditures2526: number
+  endingBalance: number
+  allocated2627: number
+}
+
 export type Allocations = {
   annual: AnnualRow[]
   recurring: RecurringRow[]
+  budget: BudgetRow[]
 }
 
 export const COMMITTEES: Committee[] = ['sgfc', 'pcc', 'cat', 'scf', 'csf']
@@ -60,6 +70,12 @@ export const approvalRate = (a: Allocations) => {
   const req = totalRequested(a)
   return req > 0 ? totalAllocated(a) / req : 0
 }
+
+export const totalOperatingBudget = (a: Allocations) =>
+  a.budget.reduce((s, r) => s + r.allocated2526, 0)
+
+export const totalExpenditures = (a: Allocations) =>
+  a.budget.reduce((s, r) => s + r.expenditures2526, 0)
 
 export type GrantHit = {
   rso: string

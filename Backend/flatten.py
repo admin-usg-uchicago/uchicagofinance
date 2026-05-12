@@ -22,8 +22,10 @@ OUT_DIR = REPO_ROOT / "Frontend" / "public"
 
 ANNUAL_RAW = RAW_DIR / "central_2025-2026__25-26_Annall_Allocation.csv"
 RECURRING_RAW = RAW_DIR / "central_2025-2026__25-26_Recurring_Allocation.csv"
+BUDGET_RAW = RAW_DIR / "central_2025-2026__25-26_Revenues_and_Expenditures.csv"
 ANNUAL_OUT = OUT_DIR / "annual_allocations.csv"
 RECURRING_OUT = OUT_DIR / "yearly_allocations.csv"
+BUDGET_OUT = OUT_DIR / "budget.csv"
 
 # Maps normalized committee names (lower-case, whitespace-collapsed, typo-corrected)
 # to the short codes the frontend uses.
@@ -55,6 +57,32 @@ def _load(path: Path) -> pd.DataFrame:
     return df
 
 
+def _load_budget(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    df = df.rename(
+        columns={
+            "Accounts": "Account",
+            "Beginning Balance (before 25/26)": "Beginning Balance",
+            "Allocated (for 25/26 year)": "Allocated 25-26",
+            "Expenditures (for 25/26 year)": "Expenditures 25-26",
+            "Ending Balance (after 25/26 year)": "Ending Balance",
+            "Allocated 26-27": "Allocated 26-27",
+        }
+    )
+    df = df[df["Account"].notna() & (df["Account"].astype(str).str.strip() != "")]
+    df = df[df["Account"].astype(str).str.strip().str.lower() != "total"]
+    return df[
+        [
+            "Account",
+            "Beginning Balance",
+            "Allocated 25-26",
+            "Expenditures 25-26",
+            "Ending Balance",
+            "Allocated 26-27",
+        ]
+    ]
+
+
 def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -73,6 +101,10 @@ def main() -> int:
     ]
     recurring.to_csv(RECURRING_OUT, index=False)
     print(f"wrote {RECURRING_OUT.relative_to(REPO_ROOT)}  ({len(recurring)} rows)")
+
+    budget = _load_budget(BUDGET_RAW)
+    budget.to_csv(BUDGET_OUT, index=False)
+    print(f"wrote {BUDGET_OUT.relative_to(REPO_ROOT)}  ({len(budget)} rows)")
 
     return 0
 

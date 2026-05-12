@@ -9,6 +9,7 @@ import {
   rsosFunded,
   topRso,
   totalAllocated,
+  totalOperatingBudget,
   totalRequests,
   type Allocations,
 } from '../data/stats'
@@ -34,6 +35,7 @@ const Sub = ({ children }: { children: ReactNode }) => (
 
 export function buildSlides(data: Allocations): SlideDef[] {
   const total = totalAllocated(data)
+  const operating = totalOperatingBudget(data)
   const rsoCount = rsosFunded(data)
   const requests = totalRequests(data)
   const big = biggestGrant(data)
@@ -51,6 +53,19 @@ export function buildSlides(data: Allocations): SlideDef[] {
             <AnimatedNumber value={total} format={currency} />
           </Big>
           <Sub>to Registered Student Organizations</Sub>
+        </>
+      ),
+    },
+    {
+      id: 'operating-budget',
+      caption: `USG operated on a ${currencyCompact(operating)} budget this year.`,
+      body: (
+        <>
+          <Eyebrow>USG operated on a</Eyebrow>
+          <Big>
+            <AnimatedNumber value={operating} format={currency} />
+          </Big>
+          <Sub>total budget across every account</Sub>
         </>
       ),
     },
