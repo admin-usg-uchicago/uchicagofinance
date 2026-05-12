@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+
 import {
   COMMITTEE_LABELS,
   COMMITTEE_SHORT,
@@ -73,7 +74,16 @@ export function RsoSearch({
       id="rso-search"
       aria-labelledby="rso-search-heading"
     >
-      <header className="section-header">
+      <motion.header
+        className="section-header"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
+      >
+        <div className="section-chapter" aria-hidden>
+          <span>III</span>
+        </div>
         <p className="section-eyebrow">Look up an RSO</p>
         <h2 id="rso-search-heading" className="section-title">
           Find your organization
@@ -82,7 +92,7 @@ export function RsoSearch({
           Search by name to see every allocation your RSO received this year and
           how it ranks within its committee.
         </p>
-      </header>
+      </motion.header>
 
       <div className="rso-controls">
         {selectedCommittee && (

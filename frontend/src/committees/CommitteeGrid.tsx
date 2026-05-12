@@ -21,7 +21,16 @@ export function CommitteeGrid({ data, onCommitteeSelect }: Props) {
       className="committees"
       aria-labelledby="committees-heading"
     >
-      <header className="section-header">
+      <motion.header
+        className="section-header"
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
+      >
+        <div className="section-chapter" aria-hidden>
+          <span>II</span>
+        </div>
         <p className="section-eyebrow">By committee</p>
         <h2 id="committees-heading" className="section-title">
           Where the money went
@@ -30,7 +39,7 @@ export function CommitteeGrid({ data, onCommitteeSelect }: Props) {
           Five funding bodies make every allocation decision. Tap any committee
           to filter the RSO list below.
         </p>
-      </header>
+      </motion.header>
 
       <div className="committee-grid">
         {COMMITTEES.map((c, i) => {

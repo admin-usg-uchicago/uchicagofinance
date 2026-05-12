@@ -14,11 +14,12 @@
   --bone: #fffaf7;
   --charcoal: #1a0d0a;
   --pencil: #4a3a37;
-  --smoke: #8a7a78;
+  --smoke: #6b5856;
   --hairline: #e5dcd9;
 
-  --font-display: 'Playfair Display', 'Charter', 'Georgia', 'Times New Roman', serif;
+  --font-display: 'Libre Bodoni', 'Charter', 'Georgia', 'Times New Roman', serif;
   --font-body: 'Charter', 'Georgia', 'Times New Roman', serif;
+  --font-ui: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --measure: 64rem;
   --gutter: clamp(1rem, 4vw, 3rem);
@@ -183,7 +184,8 @@ a:hover {
   right: 0;
   background: var(--bone);
   color: var(--maroon-deep);
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
+  font-weight: 500;
   font-size: 0.78rem;
   padding: 0.18rem 0.55rem;
   border-radius: 4px;
@@ -212,12 +214,12 @@ a:hover {
 
 .slide-eyebrow {
   margin: 0;
-  font-family: var(--font-body);
-  font-size: clamp(0.95rem, 1.8vw, 1.4rem);
-  letter-spacing: 0.04em;
+  font-family: var(--font-ui);
+  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 250, 247, 0.75);
-  font-weight: 400;
+  color: rgba(255, 250, 247, 0.7);
+  font-weight: 500;
 }
 
 .slide-mid {
@@ -273,12 +275,39 @@ a:hover {
   text-align: center;
 }
 
+.section-chapter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  color: var(--maroon);
+}
+
+.section-chapter > span {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.65rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.section-chapter::after {
+  content: '';
+  display: block;
+  width: 2.25rem;
+  height: 1px;
+  background: var(--maroon-soft);
+}
+
 .section-eyebrow {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.78rem;
+  font-weight: 600;
   color: var(--maroon);
 }
 
@@ -350,7 +379,7 @@ a:hover {
 }
 
 .committee-chip {
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: 0.72rem;
   letter-spacing: 0.12em;
@@ -385,10 +414,11 @@ a:hover {
 }
 
 .committee-stat-label {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   color: var(--smoke);
 }
 
@@ -453,9 +483,10 @@ a:hover {
 
 .committee-cta {
   margin-top: auto;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   font-size: 0.78rem;
   color: var(--maroon);
 }
@@ -488,7 +519,8 @@ a:hover {
   padding: 0.35rem 0.4rem 0.35rem 0.75rem;
   border-radius: 999px;
   font-size: 0.85rem;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
+  font-weight: 500;
 }
 
 .rso-filter-chip button {
@@ -562,6 +594,12 @@ a:hover {
   color: var(--maroon-deep);
 }
 
+.rso-input-clear:focus-visible,
+.rso-filter-chip button:focus-visible {
+  outline: 2px solid var(--maroon);
+  outline-offset: 2px;
+}
+
 .rso-suggestions {
   position: absolute;
   top: calc(100% + 4px);
@@ -596,6 +634,12 @@ a:hover {
 
 .rso-suggestion:hover,
 .rso-suggestion[aria-selected='true'] {
+  background: var(--maroon-whisper);
+}
+
+.rso-suggestion:focus-visible {
+  outline: 2px solid var(--maroon);
+  outline-offset: -2px;
   background: var(--maroon-whisper);
 }
 
@@ -658,7 +702,7 @@ a:hover {
   align-self: flex-start;
   background: var(--maroon);
   color: var(--bone);
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: 0.72rem;
   letter-spacing: 0.12em;
@@ -699,10 +743,11 @@ a:hover {
 }
 
 .rso-panel-total-label {
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-size: 0.74rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--smoke);
 }
 
@@ -741,9 +786,10 @@ a:hover {
 }
 
 .rso-requests-table thead th {
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   font-size: 0.72rem;
   color: var(--smoke);
   border-bottom: 1px solid var(--hairline);
@@ -769,9 +815,10 @@ a:hover {
 
 .rso-request-kind {
   display: inline-block;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
+  font-weight: 600;
   font-size: 0.7rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--maroon);
   background: var(--maroon-whisper);
@@ -790,7 +837,7 @@ a:hover {
 .app-foot {
   padding: 2rem var(--gutter) 3rem;
   text-align: center;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--smoke);
   background: var(--bone);

@@ -17,8 +17,9 @@ export const NEUTRAL = {
   hairline: '#e5dcd9',
 } as const
 
-export const FONT_DISPLAY = `'Playfair Display', 'Charter', 'Georgia', 'Times New Roman', serif`
+export const FONT_DISPLAY = `'Libre Bodoni', 'Charter', 'Georgia', 'Times New Roman', serif`
 export const FONT_BODY = `'Charter', 'Georgia', 'Times New Roman', serif`
+export const FONT_UI = `'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif`
 export const FONT_MONO = `'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace`
 
 export const SLIDE_MS = 5500
