@@ -22,3 +22,9 @@ sources:
       - "25-26 Annall Allocation"
       - "25-26 Recurring Allocation"
       - "25-26 Revenues and Expenditures"
+      - "25-26 RSO Awards"
+      - "25-26 Detailed USG expenditures"
+
+  - key: central_2026-2027
+    url: https://docs.google.com/spreadsheets/d/1U9qeNKOmlqEBhTnRC1TX2SrNuZjBvmlMXwsUh02h9vI/edit?gid=0#gid=0
+    description: USG central allocation log for the 2026-27 cycle (in progress)
