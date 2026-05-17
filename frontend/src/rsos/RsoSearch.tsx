@@ -8,7 +8,6 @@ import {
   perRso,
   rsoTotals,
   type Allocations,
-  type Committee,
 } from '../data/stats'
 import { currency } from '../data/format'
 
@@ -16,15 +15,9 @@ const MAX_SUGGESTIONS = 8
 
 type Props = {
   data: Allocations
-  selectedCommittee: Committee | null
-  onClearCommittee: () => void
 }
 
-export function RsoSearch({
-  data,
-  selectedCommittee,
-  onClearCommittee,
-}: Props) {
+export function RsoSearch({ data }: Props) {
   const [query, setQuery] = useState('')
   const [selectedRso, setSelectedRso] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
@@ -33,24 +26,19 @@ export function RsoSearch({
   const allNames = useMemo(() => allRsoNames(data), [data])
   const totals = useMemo(() => rsoTotals(data), [data])
 
-  const filteredNames = useMemo(() => {
-    if (!selectedCommittee) return allNames
-    return allNames.filter((name) => totals.get(name)?.committee === selectedCommittee)
-  }, [allNames, selectedCommittee, totals])
-
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return filteredNames.slice(0, MAX_SUGGESTIONS)
-    return filteredNames
+    if (!q) return allNames.slice(0, MAX_SUGGESTIONS)
+    return allNames
       .filter((name) => name.toLowerCase().includes(q))
       .slice(0, MAX_SUGGESTIONS)
-  }, [query, filteredNames])
+  }, [query, allNames])
 
   useEffect(() => {
-    if (selectedRso && !filteredNames.includes(selectedRso)) {
+    if (selectedRso && !allNames.includes(selectedRso)) {
       setSelectedRso(null)
     }
-  }, [filteredNames, selectedRso])
+  }, [allNames, selectedRso])
 
   const pick = (name: string) => {
     setSelectedRso(name)
@@ -82,7 +70,7 @@ export function RsoSearch({
         transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
       >
         <div className="section-chapter" aria-hidden>
-          <span>III</span>
+          <span>V</span>
         </div>
         <p className="section-eyebrow">Look up an RSO</p>
         <h2 id="rso-search-heading" className="section-title">
@@ -95,29 +83,12 @@ export function RsoSearch({
       </motion.header>
 
       <div className="rso-controls">
-        {selectedCommittee && (
-          <div className="rso-filter-chip">
-            <span>Filtering: {COMMITTEE_LABELS[selectedCommittee]}</span>
-            <button
-              type="button"
-              onClick={onClearCommittee}
-              aria-label="Clear committee filter"
-            >
-              &times;
-            </button>
-          </div>
-        )}
-
         <div className={`rso-input-wrap ${open ? 'is-open' : ''}`}>
           <input
             ref={inputRef}
             className="rso-input"
             type="search"
-            placeholder={
-              selectedCommittee
-                ? `Search ${COMMITTEE_SHORT[selectedCommittee]} RSOs…`
-                : 'Search RSOs by name…'
-            }
+            placeholder="Search RSOs by name…"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -269,9 +240,7 @@ export function RsoSearch({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            {filteredNames.length === 0
-              ? 'No RSOs match this filter.'
-              : 'Start typing to look up an RSO.'}
+            Start typing to look up an RSO.
           </motion.p>
         ) : null}
       </AnimatePresence>

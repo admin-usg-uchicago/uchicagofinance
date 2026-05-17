@@ -3,10 +3,13 @@ import Papa from 'papaparse'
 import type {
   Allocations,
   AnnualRow,
+  AwardRow,
   BudgetRow,
   Committee,
+  ExpenditureRow,
   RecurringRow,
 } from './stats'
+import { cycleBySlug, type CycleSlug } from './cycles'
 
 type RawAnnual = {
   'RSO Name': string
@@ -29,6 +32,19 @@ type RawBudget = {
   'Allocated 26-27': string
 }
 
+type RawAward = {
+  'RSO Name': string
+  Award: string
+  Description: string
+}
+
+type RawExpenditure = {
+  Division: string
+  Category: string
+  Description: string
+  Amount: string
+}
+
 const toNumber = (s: string | number | undefined | null): number => {
   if (typeof s === 'number') return s
   if (!s) return 0
@@ -48,18 +64,29 @@ const parseCsv = <T,>(path: string): Promise<T[]> =>
     })
   })
 
-export const useAllocations = () => {
+const empty = <T,>(): Promise<T[]> => Promise.resolve([])
+
+export const useAllocations = (slug: CycleSlug) => {
   const [data, setData] = useState<Allocations | null>(null)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
     let cancelled = false
+    setData(null)
+    setError(null)
+    const cycle = cycleBySlug(slug)
+    const base = `/cycles/${cycle.slug}`
+
     Promise.all([
-      parseCsv<RawAnnual>('/annual_allocations.csv'),
-      parseCsv<RawRecurring>('/yearly_allocations.csv'),
-      parseCsv<RawBudget>('/budget.csv'),
+      cycle.hasAnnual ? parseCsv<RawAnnual>(`${base}/annual_allocations.csv`) : empty<RawAnnual>(),
+      cycle.hasRecurring ? parseCsv<RawRecurring>(`${base}/yearly_allocations.csv`) : empty<RawRecurring>(),
+      cycle.hasBudget ? parseCsv<RawBudget>(`${base}/budget.csv`) : empty<RawBudget>(),
+      cycle.hasAwards ? parseCsv<RawAward>(`${base}/awards.csv`) : empty<RawAward>(),
+      cycle.hasExpenditures
+        ? parseCsv<RawExpenditure>(`${base}/expenditures.csv`)
+        : empty<RawExpenditure>(),
     ])
-      .then(([rawAnnual, rawRecurring, rawBudget]) => {
+      .then(([rawAnnual, rawRecurring, rawBudget, rawAwards, rawExpenditures]) => {
         if (cancelled) return
         const annual: AnnualRow[] = rawAnnual
           .filter((r) => r['RSO Name'])
@@ -89,7 +116,22 @@ export const useAllocations = () => {
             endingBalance: toNumber(r['Ending Balance']),
             allocated2627: toNumber(r['Allocated 26-27']),
           }))
-        setData({ annual, recurring, budget })
+        const awards: AwardRow[] = rawAwards
+          .filter((r) => r['RSO Name'])
+          .map((r) => ({
+            rso: r['RSO Name'].trim(),
+            award: (r.Award || '').trim(),
+            description: (r.Description || '').trim(),
+          }))
+        const expenditures: ExpenditureRow[] = rawExpenditures
+          .filter((r) => r.Division)
+          .map((r) => ({
+            division: r.Division.trim(),
+            category: (r.Category || '').trim(),
+            description: (r.Description || '').trim(),
+            amount: toNumber(r.Amount),
+          }))
+        setData({ annual, recurring, budget, awards, expenditures })
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err)
@@ -97,7 +139,7 @@ export const useAllocations = () => {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [slug])
 
   return { data, error }
 }
