@@ -1,31 +1,43 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import {
-  COMMITTEE_LABELS,
   COMMITTEE_SHORT,
-  COMMITTEES,
   rsoRequestedFunded,
   type Allocations,
   type Committee,
   type RsoFunding,
 } from '../data/stats'
+import type { StatusFilter } from '../controls/DashboardControls'
 import { currency, currencyCompact, percent } from '../data/format'
 
-type Props = { data: Allocations }
+type Props = {
+  data: Allocations
+  selectedCommittee: Committee | null
+  status: StatusFilter
+  topN: number
+}
 
-type Filter = Committee | 'all'
+function matchesStatus(r: RsoFunding, status: StatusFilter): boolean {
+  if (status === 'all') return true
+  if (r.requested <= 0) return false
+  if (status === 'fully') return r.funded >= r.requested
+  if (status === 'partial') return r.funded > 0 && r.funded < r.requested
+  if (status === 'denied') return r.funded === 0
+  return true
+}
 
-const DUMBBELL_LIMIT = 20
-
-export function FundingSection({ data }: Props) {
+export function FundingSection({ data, selectedCommittee, status, topN }: Props) {
   const all = useMemo(() => rsoRequestedFunded(data), [data])
-  const [filter, setFilter] = useState<Filter>('all')
   const [hovered, setHovered] = useState<RsoFunding | null>(null)
 
-  const filtered = useMemo(
-    () => (filter === 'all' ? all : all.filter((r) => r.committee === filter)),
-    [all, filter],
-  )
+  const filtered = useMemo(() => {
+    let rows = all
+    if (selectedCommittee) {
+      rows = rows.filter((r) => r.committee === selectedCommittee)
+    }
+    rows = rows.filter((r) => matchesStatus(r, status))
+    return rows
+  }, [all, selectedCommittee, status])
 
   const aggregate = useMemo(() => {
     const req = filtered.reduce((s, r) => s + r.requested, 0)
@@ -42,9 +54,9 @@ export function FundingSection({ data }: Props) {
     () =>
       [...filtered]
         .sort((a, b) => b.gap - a.gap)
-        .slice(0, DUMBBELL_LIMIT)
+        .slice(0, topN)
         .filter((r) => r.gap > 0),
-    [filtered],
+    [filtered, topN],
   )
 
   return (
@@ -73,23 +85,6 @@ export function FundingSection({ data }: Props) {
         </p>
       </motion.header>
 
-      <div className="funding-filters" role="tablist" aria-label="Filter by committee">
-        <FilterChip
-          active={filter === 'all'}
-          onClick={() => setFilter('all')}
-          label="All committees"
-        />
-        {COMMITTEES.map((c) => (
-          <FilterChip
-            key={c}
-            active={filter === c}
-            onClick={() => setFilter(c)}
-            label={COMMITTEE_SHORT[c]}
-            title={COMMITTEE_LABELS[c]}
-          />
-        ))}
-      </div>
-
       <div className="funding-summary">
         <SummaryStat label="RSOs shown" value={aggregate.rsos.toLocaleString()} />
         <SummaryStat
@@ -110,7 +105,7 @@ export function FundingSection({ data }: Props) {
       <div className="funding-chart-wrap">
         <ScatterChart
           points={filtered}
-          highlight={filter === 'all' ? null : filter}
+          highlight={selectedCommittee}
           onHover={setHovered}
         />
         <HoverPanel point={hovered} />
@@ -120,7 +115,7 @@ export function FundingSection({ data }: Props) {
         <header className="funding-cuts-head">
           <h3>Biggest cuts</h3>
           <p>
-            Top {biggestCuts.length} {filter === 'all' ? '' : `${COMMITTEE_SHORT[filter]} `}
+            Top {biggestCuts.length} {selectedCommittee ? `${COMMITTEE_SHORT[selectedCommittee]} ` : ''}
             RSOs by gap between requested and funded.
           </p>
         </header>
@@ -134,31 +129,6 @@ export function FundingSection({ data }: Props) {
         )}
       </div>
     </section>
-  )
-}
-
-function FilterChip({
-  active,
-  onClick,
-  label,
-  title,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  title?: string
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      className={`funding-chip${active ? ' funding-chip--active' : ''}`}
-      onClick={onClick}
-      title={title}
-    >
-      {label}
-    </button>
   )
 }
 

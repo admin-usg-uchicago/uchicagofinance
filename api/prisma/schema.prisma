@@ -1,0 +1,159 @@
+// Stub schema for the UChicago USG Allocation API.
+// Stable entities only — see `Deferred` block at the bottom for what is intentionally missing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==== Enums ====
+
+enum Role {
+  viewer
+  committee_member
+  committee_chair
+  cli_advisor
+  cc_rep
+  cc_chair
+  vpso
+  president
+  evp
+}
+
+enum AllocationStatus {
+  requested
+  committee_suggested
+  under_cc_review
+  cc_approved
+  published
+}
+
+enum AllocationType {
+  annual
+  event
+}
+
+enum BudgetLineKind {
+  committee_pool
+  non_committee
+}
+
+enum AllocationScope {
+  annual
+  yearly
+  combined
+}
+
+// ==== Reference data ====
+
+model Committee {
+  id         String   @id @default(cuid())
+  code       String   @unique // CAT, CSF, PCC, SGFC, SCF
+  name       String
+  doesAnnual Boolean
+  doesYearly Boolean
+  createdAt  DateTime @default(now())
+
+  rsos      Rso[]
+  userRoles UserRole[]
+
+  @@map("committees")
+}
+
+model RsoCategory {
+  id   String @id @default(cuid())
+  name String @unique
+
+  rsos Rso[]
+
+  @@map("rso_categories")
+}
+
+model FiscalYear {
+  id                  String   @id @default(cuid())
+  label               String   @unique // e.g. "2026-2027"
+  startsAt            DateTime
+  endsAt              DateTime
+  totalApprovedBudget Decimal? @db.Decimal(12, 2)
+  scalingFactor       Decimal? @db.Decimal(8, 6) // e.g. 1.020000 for the 2% rule
+
+  @@map("fiscal_years")
+}
+
+// ==== People ====
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  roles     UserRole[]
+  auditLogs AuditLog[] @relation("ActorAuditLogs")
+
+  @@map("users")
+}
+
+model UserRole {
+  id          String  @id @default(cuid())
+  userId      String
+  role        Role
+  committeeId String? // set only for committee-scoped roles
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  committee Committee? @relation(fields: [committeeId], references: [id])
+
+  @@unique([userId, role, committeeId])
+  @@map("user_roles")
+}
+
+// ==== Domain ====
+
+model Rso {
+  id                 String    @id @default(cuid())
+  name               String
+  categoryId         String?
+  primaryCommitteeId String?
+  status             String? // TODO: enum once the actual states are confirmed with VPSO
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+
+  category         RsoCategory? @relation(fields: [categoryId], references: [id])
+  primaryCommittee Committee?   @relation(fields: [primaryCommitteeId], references: [id])
+
+  @@index([name])
+  @@map("rsos")
+}
+
+// ==== Audit ====
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?
+  action     String // "create" | "update" | "delete"
+  entityType String
+  entityId   String
+  beforeJson Json?
+  afterJson  Json?
+  occurredAt DateTime @default(now())
+
+  actor User? @relation("ActorAuditLogs", fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([occurredAt])
+  @@map("audit_logs")
+}
+
+// ==== Deferred — add once design questions are settled ====
+//
+// BudgetLine                — depends on Q1 (caps vs sums) and Q2 (SGFC yearly placement)
+// AllocationRequest
+// AllocationRecord          — current state per request
+// AllocationRecordVersion   — full snapshot per edit
+// PublishedSnapshot         — flat read-optimized RSO allocations
+// PublishedBudgetSnapshot   — flat read-optimized top-level budget
+// Notification

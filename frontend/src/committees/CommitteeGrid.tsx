@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   COMMITTEE_LABELS,
@@ -12,12 +11,20 @@ import { currency, integer } from '../data/format'
 
 type Props = {
   data: Allocations
+  selectedCommittee: Committee | null
+  onSelectCommittee: (c: Committee | null) => void
+  topN: number
 }
 
 const COLLAPSED_BARS = 5
 
-export function CommitteeGrid({ data }: Props) {
-  const [expanded, setExpanded] = useState<Committee | null>(null)
+export function CommitteeGrid({
+  data,
+  selectedCommittee,
+  onSelectCommittee,
+  topN,
+}: Props) {
+  const expanded = selectedCommittee
 
   const renderCard = (c: Committee, i: number) => {
     const stats = perCommittee(data, c, COLLAPSED_BARS)
@@ -27,7 +34,7 @@ export function CommitteeGrid({ data }: Props) {
         key={c}
         type="button"
         className="committee-card"
-        onClick={() => setExpanded(c)}
+        onClick={() => onSelectCommittee(c)}
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -83,7 +90,7 @@ export function CommitteeGrid({ data }: Props) {
   }
 
   const renderSolo = (c: Committee) => {
-    const stats = perCommittee(data, c, Number.POSITIVE_INFINITY)
+    const stats = perCommittee(data, c, topN)
     const max = Math.max(1, ...stats.topRsos.map((r) => r.total))
     return (
       <motion.article
@@ -99,7 +106,7 @@ export function CommitteeGrid({ data }: Props) {
           <button
             type="button"
             className="committee-solo-back"
-            onClick={() => setExpanded(null)}
+            onClick={() => onSelectCommittee(null)}
             aria-label="Show all committees"
           >
             &larr; All committees

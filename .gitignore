@@ -4,6 +4,13 @@
 *.key
 credentials.json
 authorized_user.json
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
 
 # Python
 __pycache__/

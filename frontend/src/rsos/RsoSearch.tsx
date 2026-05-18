@@ -8,6 +8,7 @@ import {
   perRso,
   rsoTotals,
   type Allocations,
+  type Committee,
 } from '../data/stats'
 import { currency } from '../data/format'
 
@@ -15,16 +16,22 @@ const MAX_SUGGESTIONS = 8
 
 type Props = {
   data: Allocations
+  selectedCommittee: Committee | null
 }
 
-export function RsoSearch({ data }: Props) {
+export function RsoSearch({ data, selectedCommittee }: Props) {
   const [query, setQuery] = useState('')
   const [selectedRso, setSelectedRso] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const allNames = useMemo(() => allRsoNames(data), [data])
   const totals = useMemo(() => rsoTotals(data), [data])
+
+  const allNames = useMemo(() => {
+    const names = allRsoNames(data)
+    if (!selectedCommittee) return names
+    return names.filter((n) => totals.get(n)?.committee === selectedCommittee)
+  }, [data, selectedCommittee, totals])
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -37,6 +44,7 @@ export function RsoSearch({ data }: Props) {
   useEffect(() => {
     if (selectedRso && !allNames.includes(selectedRso)) {
       setSelectedRso(null)
+      setQuery('')
     }
   }, [allNames, selectedRso])
 
