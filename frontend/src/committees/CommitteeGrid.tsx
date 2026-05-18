@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   COMMITTEE_LABELS,
@@ -14,6 +15,7 @@ type Props = {
   selectedCommittee: Committee | null
   onSelectCommittee: (c: Committee | null) => void
   topN: number
+  controlsSlot?: ReactNode
 }
 
 const COLLAPSED_BARS = 5
@@ -23,6 +25,7 @@ export function CommitteeGrid({
   selectedCommittee,
   onSelectCommittee,
   topN,
+  controlsSlot,
 }: Props) {
   const expanded = selectedCommittee
 
@@ -182,13 +185,15 @@ export function CommitteeGrid({
         </div>
         <p className="section-eyebrow">By committee</p>
         <h2 id="committees-heading" className="section-title">
-          Where the money went
+          Allocation breakdown by committee
         </h2>
         <p className="section-lede">
           Five funding bodies make every allocation decision. Tap any card to
           see every RSO it funded.
         </p>
       </motion.header>
+
+      {controlsSlot}
 
       <AnimatePresence mode="wait" initial={false}>
         {expanded ? (

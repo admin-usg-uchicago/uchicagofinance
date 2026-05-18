@@ -10,7 +10,7 @@ const SECTIONS: SectionLink[] = [
   { id: 'rso-search', label: 'Find your RSO' },
   { id: 'funding', label: 'Funding' },
   { id: 'awards', label: 'Awards' },
-  { id: 'expenditures', label: 'Operating budget' },
+  { id: 'expenditures', label: 'Other USG expenditures' },
 ]
 
 export function SectionNav() {

@@ -181,8 +181,8 @@ export function buildSlides(
             <AnimatedNumber value={approval.rate} format={percent} />
           </Big>
           <Sub>
-            of the RSOs that asked &mdash; {integer(approval.funded)} of{' '}
-            {integer(approval.asked)} walked away with something
+            of the RSOs that asked were funded &mdash; {integer(approval.funded)} of{' '}
+            {integer(approval.asked)}
             {total > 0 && <> ({currencyCompact(total)} total)</>}
           </Sub>
         </>
@@ -190,7 +190,7 @@ export function buildSlides(
       shareCard: {
         eyebrow: 'Of those, USG funded',
         headline: percent(approval.rate),
-        sub: `${integer(approval.funded)} of ${integer(approval.asked)} RSOs walked away with something${total > 0 ? ` (${currencyCompact(total)} total)` : ''}`,
+        sub: `${integer(approval.funded)} of ${integer(approval.asked)} RSOs that asked were funded${total > 0 ? ` (${currencyCompact(total)} total)` : ''}`,
       },
     })
   }

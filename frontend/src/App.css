@@ -477,37 +477,47 @@ a:hover {
  * ───────────────────────────────────────────────────────────── */
 .dashboard-controls {
   max-width: var(--measure);
-  margin: clamp(2rem, 5vw, 3.5rem) auto;
-  padding: 1.25rem clamp(1rem, 4vw, 1.75rem);
+  margin: clamp(1rem, 3vw, 1.75rem) auto;
+  padding: 0.45rem 0.9rem;
   background: var(--maroon-whisper);
   border: 1px solid var(--hairline);
-  border-radius: 16px;
+  border-radius: 999px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.85rem;
   font-family: var(--font-ui);
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .dc-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.dc-row + .dc-row {
+  border-left: 1px solid var(--hairline);
+  padding-left: 0.85rem;
 }
 
 .dc-row-label {
-  font-size: 0.78rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   color: var(--smoke);
-  font-weight: 600;
-  min-width: 80px;
+  font-weight: 700;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .dc-pills {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
 }
 
 .dc-pill {
@@ -516,12 +526,26 @@ a:hover {
   background: #fff;
   color: var(--pencil);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.72rem;
   font-weight: 500;
-  padding: 0.4rem 0.85rem;
+  padding: 0.18rem 0.6rem;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+@media (max-width: 900px) {
+  .dashboard-controls {
+    border-radius: 14px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 0.5rem 0.85rem;
+  }
+  .dc-row + .dc-row {
+    border-left: 0;
+    padding-left: 0;
+  }
 }
 
 .dc-pill:hover {
@@ -2060,6 +2084,213 @@ a:hover {
   margin: 0;
 }
 
+/* Median allocation number line */
+.numline {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 56rem;
+  margin: 0 auto;
+  font-family: var(--font-ui);
+}
+
+.numline-axis {
+  stroke: var(--charcoal);
+  stroke-width: 1.5;
+}
+
+.numline-tick line {
+  stroke: var(--smoke);
+  stroke-width: 1;
+}
+
+.numline-tick text {
+  fill: var(--smoke);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.numline-rug {
+  /* fill set inline per committee; opacity set inline too */
+}
+
+.numline-rug-label {
+  fill: var(--smoke);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.numline-eyebrow {
+  fill: var(--charcoal);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.numline-eyebrow-sub {
+  fill: var(--smoke);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-style: italic;
+}
+
+/* Per-committee stats grid */
+.cmstats {
+  list-style: none;
+  margin: 1.75rem auto 0;
+  padding: 0;
+  max-width: 60rem;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.cmstats-card {
+  background: var(--bone);
+  border: 1px solid var(--hairline);
+  border-top: 3px solid var(--maroon);
+  border-radius: 8px;
+  padding: 0.7rem 0.75rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease;
+  min-width: 0;
+}
+
+.cmstats-card--dim {
+  opacity: 0.32;
+}
+
+.cmstats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cmstats-chip {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 4px;
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.cmstats-rsos {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--smoke);
+  letter-spacing: 0.04em;
+}
+
+.cmstats-median {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cmstats-median-label {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--smoke);
+}
+
+.cmstats-median-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--charcoal);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.cmstats-detail {
+  margin: 0;
+  padding: 0.55rem 0 0;
+  border-top: 1px dashed var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cmstats-detail > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.cmstats-detail dt {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  color: var(--smoke);
+}
+
+.cmstats-detail dd {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  color: var(--charcoal);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+  .cmstats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.numline-stem {
+  /* stroke set inline per committee */
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+  opacity: 0.55;
+}
+
+.numline-median-dot {
+  /* fill set inline per committee */
+  stroke: var(--bone);
+  stroke-width: 2;
+}
+
+.numline-pill {
+  /* fill set inline per committee */
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 1;
+}
+
+.numline-pill-label {
+  fill: var(--bone);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.numline-pill-value {
+  fill: var(--bone);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.numline-median--dim {
+  opacity: 0.2;
+}
+
 .dumbbell-list {
   list-style: none;
   padding: 0;
@@ -2238,7 +2469,6 @@ a:hover {
 .cycle-nav-brand span {
   color: var(--maroon-soft);
   font-weight: 500;
-  margin-left: 0.35rem;
 }
 
 .cycle-nav-pills {

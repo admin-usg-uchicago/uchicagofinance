@@ -74,20 +74,22 @@ export default function App() {
           cycle={cycleBySlug(cycle)}
           onExplore={handleScrollPastHero}
         />
-        <DashboardControls
-          selectedCommittee={selectedCommittee}
-          onSelectCommittee={setSelectedCommittee}
-          status={statusFilter}
-          onSelectStatus={setStatusFilter}
-          topN={topN}
-          onSelectTopN={setTopN}
-        />
         <CommitteeGrid
           key={`committees-${cycle}`}
           data={data}
           selectedCommittee={selectedCommittee}
           onSelectCommittee={setSelectedCommittee}
           topN={topN}
+          controlsSlot={
+            <DashboardControls
+              selectedCommittee={selectedCommittee}
+              onSelectCommittee={setSelectedCommittee}
+              status={statusFilter}
+              onSelectStatus={setStatusFilter}
+              topN={topN}
+              onSelectTopN={setTopN}
+            />
+          }
         />
         <RsoSearch
           key={`rsos-${cycle}`}

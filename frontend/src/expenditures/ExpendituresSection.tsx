@@ -75,14 +75,14 @@ export function ExpendituresSection({ data }: Props) {
         <div className="section-chapter" aria-hidden>
           <span>VII</span>
         </div>
-        <p className="section-eyebrow">Operating budget</p>
+        <p className="section-eyebrow">Other spending</p>
         <h2 id="expenditures-heading" className="section-title">
-          Behind the scenes
+          Other USG expenditures
         </h2>
         <p className="section-lede">
           {rows.length === 0
-            ? 'Operating expenditures will be published once the cycle is underway.'
-            : 'The programs, events, and operations that keep USG running for students — across cabinet, divisions, and partner units.'}
+            ? 'Other USG expenditures will be published once the cycle is underway.'
+            : 'Other USG expenditures across cabinet, divisions, and committees.'}
         </p>
       </motion.header>
 
