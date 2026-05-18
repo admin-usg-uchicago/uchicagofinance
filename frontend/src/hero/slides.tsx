@@ -4,7 +4,6 @@ import { currency, currencyCompact, integer, percent } from '../data/format'
 import {
   COMMITTEE_LABELS,
   COMMITTEE_SHORT,
-  deniedCount,
   fullyFundedCount,
   rankedCommitteeRates,
   rsoApprovalRate,
@@ -12,7 +11,6 @@ import {
   totalAllocated,
   totalRequested,
   type Allocations,
-  type ExpenditureRow,
 } from '../data/stats'
 import type { Cycle } from '../data/cycles'
 
@@ -56,12 +54,6 @@ const Sub = ({ children }: { children: ReactNode }) => (
 const AWARD_FUN_FACTS: Record<string, string> = {
   'phoenix sustainability initiative': '50,000 lbs of food waste composted.',
 }
-
-// Internal-spend fun pairs: find two transactions whose contrast tells a story.
-const findExp = (
-  rows: ExpenditureRow[],
-  match: (r: ExpenditureRow) => boolean,
-): ExpenditureRow | null => rows.find(match) ?? null
 
 // Inline mini-bar comparing requested vs funded for a single RSO.
 function RequestVsFundedBar({
@@ -152,9 +144,7 @@ export function buildSlides(
   const approval = rsoApprovalRate(data)
   const rates = rankedCommitteeRates(data)
   const generous = rates[0]
-  const stingy = rates[rates.length - 1]
   const fullyFunded = fullyFundedCount(data)
-  const denied = deniedCount(data)
   const top = topRsoWithAsk(data)
 
   const slides: SlideDef[] = []
@@ -205,88 +195,46 @@ export function buildSlides(
     })
   }
 
-  if (generous && stingy && generous.committee !== stingy.committee) {
+  if (generous) {
     slides.push({
-      id: 'committee-contrast',
-      caption: `${COMMITTEE_SHORT[generous.committee]} funded ${percent(generous.rate)} of requests; ${COMMITTEE_SHORT[stingy.committee]} funded ${percent(stingy.rate)}.`,
+      id: 'committee-generous',
+      caption: `${COMMITTEE_SHORT[generous.committee]} funded ${percent(generous.rate)} of requests in ${cycleShort}.`,
       body: (
         <>
-          <Eyebrow>Most generous vs. toughest room</Eyebrow>
-          <div className="slide-twin">
-            <div className="slide-twin-item slide-twin-item--win">
-              <span className="slide-twin-num">{percent(generous.rate)}</span>
-              <span className="slide-twin-label">
-                {COMMITTEE_SHORT[generous.committee]}
-              </span>
-              <span className="slide-twin-cap">of requests funded</span>
-            </div>
-            <span className="slide-twin-divider" aria-hidden>
-              vs
-            </span>
-            <div className="slide-twin-item">
-              <span className="slide-twin-num">{percent(stingy.rate)}</span>
-              <span className="slide-twin-label">
-                {COMMITTEE_SHORT[stingy.committee]}
-              </span>
-              <span className="slide-twin-cap">of requests funded</span>
-            </div>
-          </div>
+          <Eyebrow>Top funding rate, {cycleShort}</Eyebrow>
+          <Big>
+            <AnimatedNumber value={generous.rate} format={percent} />
+          </Big>
           <Sub>
-            {COMMITTEE_LABELS[generous.committee]} vs.{' '}
-            {COMMITTEE_LABELS[stingy.committee]}
+            of requests funded by {COMMITTEE_LABELS[generous.committee]}
           </Sub>
         </>
       ),
       shareCard: {
-        eyebrow: 'Most generous vs. toughest room',
-        headline: '',
-        comparison: {
-          leftLabel: COMMITTEE_SHORT[generous.committee],
-          leftValue: percent(generous.rate),
-          rightLabel: COMMITTEE_SHORT[stingy.committee],
-          rightValue: percent(stingy.rate),
-        },
-        sub: `${COMMITTEE_LABELS[generous.committee]} vs. ${COMMITTEE_LABELS[stingy.committee]}`,
+        eyebrow: `Top funding rate, ${cycleShort}`,
+        headline: percent(generous.rate),
+        sub: `of requests funded by ${COMMITTEE_LABELS[generous.committee]}`,
       },
     })
   }
 
-  if (fullyFunded > 0 || denied > 0) {
+  if (fullyFunded > 0) {
     slides.push({
       id: 'fully-funded',
-      caption:
-        denied > 0
-          ? `${integer(fullyFunded)} RSOs got every dollar in ${cycleShort}; ${integer(denied)} got nothing.`
-          : `${integer(fullyFunded)} RSOs got every dollar in ${cycleShort}.`,
+      caption: `${integer(fullyFunded)} RSOs received every dollar they asked for in ${cycleShort}.`,
       body: (
         <>
-          <Eyebrow>Got everything &middot; got nothing</Eyebrow>
-          <div className="slide-twin">
-            <div className="slide-twin-item slide-twin-item--win">
-              <span className="slide-twin-num">{integer(fullyFunded)}</span>
-              <span className="slide-twin-label">Fully funded</span>
-              <span className="slide-twin-cap">got every dollar asked</span>
-            </div>
-            <span className="slide-twin-divider" aria-hidden>
-              vs
-            </span>
-            <div className="slide-twin-item">
-              <span className="slide-twin-num">{integer(denied)}</span>
-              <span className="slide-twin-label">Walked away with $0</span>
-              <span className="slide-twin-cap">asked but unfunded</span>
-            </div>
-          </div>
+          <Eyebrow>Fully funded in {cycleShort}</Eyebrow>
+          <Big>
+            <AnimatedNumber value={fullyFunded} format={integer} />
+          </Big>
+          <Sub>RSOs received every dollar they asked for</Sub>
         </>
       ),
       shareCard: {
-        eyebrow: 'Got everything · got nothing',
-        headline: '',
-        comparison: {
-          leftLabel: 'Fully funded',
-          leftValue: integer(fullyFunded),
-          rightLabel: 'Walked away with $0',
-          rightValue: integer(denied),
-        },
+        eyebrow: `Fully funded in ${cycleShort}`,
+        headline: integer(fullyFunded),
+        sub: 'RSOs received every dollar they asked for',
       },
     })
   }
@@ -345,44 +293,6 @@ export function buildSlides(
     })
   }
 
-  // Internal-spend punchline: USG spent more on pizza than on Canva.
-  const pizza = findExp(data.expenditures, (r) =>
-    /medici/i.test(r.description),
-  )
-  const canva = findExp(data.expenditures, (r) => /canva/i.test(r.description))
-  if (pizza && canva) {
-    slides.push({
-      id: 'internal-punchline',
-      caption: `USG spent ${currency(pizza.amount)} on pizza and ${currency(canva.amount)} on Canva in ${cycleShort}.`,
-      body: (
-        <>
-          <Eyebrow>USG&rsquo;s own ledger, {cycleShort}</Eyebrow>
-          <div className="slide-pair">
-            <div className="slide-pair-row">
-              <span className="slide-pair-amt">{currency(pizza.amount)}</span>
-              <span className="slide-pair-what">on pizza</span>
-            </div>
-            <div className="slide-pair-row">
-              <span className="slide-pair-amt">{currency(canva.amount)}</span>
-              <span className="slide-pair-what">on Canva</span>
-            </div>
-          </div>
-          <Sub>Cabinet bought more lunch than software.</Sub>
-        </>
-      ),
-      shareCard: {
-        eyebrow: `USG's own ledger, ${cycleShort}`,
-        headline: '',
-        comparison: {
-          leftLabel: 'on pizza',
-          leftValue: currency(pizza.amount),
-          rightLabel: 'on Canva',
-          rightValue: currency(canva.amount),
-        },
-        sub: 'Cabinet bought more lunch than software.',
-      },
-    })
-  }
 
   slides.push({
     id: 'outro',
@@ -392,7 +302,7 @@ export function buildSlides(
         <Eyebrow>That&rsquo;s {cycleLabel} in numbers.</Eyebrow>
         <p className="slide-outro">
           Committee breakdowns, awards, your RSO&rsquo;s detail, and USG&rsquo;s
-          internal ledger are waiting below.
+          operating budget are waiting below.
         </p>
         <button
           type="button"

@@ -53,7 +53,7 @@ export function AwardsSection({ data }: Props) {
         transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
       >
         <div className="section-chapter" aria-hidden>
-          <span>IV</span>
+          <span>V</span>
         </div>
         <p className="section-eyebrow">RSO Awards</p>
         <h2 id="awards-heading" className="section-title">
@@ -62,7 +62,7 @@ export function AwardsSection({ data }: Props) {
         <p className="section-lede">
           {empty
             ? 'Award recipients are announced near the end of the academic year.'
-            : 'Seven Registered Student Organizations recognized this year for their impact on campus and beyond.'}
+            : 'The Registered Student Organizations recognized this year by USG for their impact on campus and beyond.'}
         </p>
       </motion.header>
 

@@ -12,8 +12,6 @@ import {
 } from '../data/stats'
 import { currency } from '../data/format'
 
-const MAX_SUGGESTIONS = 8
-
 type Props = {
   data: Allocations
   selectedCommittee: Committee | null
@@ -35,10 +33,8 @@ export function RsoSearch({ data, selectedCommittee }: Props) {
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return allNames.slice(0, MAX_SUGGESTIONS)
-    return allNames
-      .filter((name) => name.toLowerCase().includes(q))
-      .slice(0, MAX_SUGGESTIONS)
+    if (!q) return allNames
+    return allNames.filter((name) => name.toLowerCase().includes(q))
   }, [query, allNames])
 
   useEffect(() => {
@@ -78,7 +74,7 @@ export function RsoSearch({ data, selectedCommittee }: Props) {
         transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
       >
         <div className="section-chapter" aria-hidden>
-          <span>V</span>
+          <span>III</span>
         </div>
         <p className="section-eyebrow">Look up an RSO</p>
         <h2 id="rso-search-heading" className="section-title">

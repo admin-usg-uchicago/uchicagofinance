@@ -7,6 +7,7 @@ import { RsoCompare } from './rsos/RsoCompare'
 import { AwardsSection } from './awards/AwardsSection'
 import { ExpendituresSection } from './expenditures/ExpendituresSection'
 import { CycleNav } from './nav/CycleNav'
+import { SectionNav } from './nav/SectionNav'
 import { DashboardControls, type StatusFilter } from './controls/DashboardControls'
 import { useAllocations } from './data/useAllocations'
 import { DEFAULT_CYCLE, cycleBySlug, type CycleSlug } from './data/cycles'
@@ -65,6 +66,7 @@ export default function App() {
   return (
     <>
       <CycleNav current={cycle} onSelect={handleSelectCycle} />
+      <SectionNav />
       <main className="app">
         <Hero
           key={`hero-${cycle}`}
@@ -87,6 +89,11 @@ export default function App() {
           onSelectCommittee={setSelectedCommittee}
           topN={topN}
         />
+        <RsoSearch
+          key={`rsos-${cycle}`}
+          data={data}
+          selectedCommittee={selectedCommittee}
+        />
         <FundingSection
           key={`funding-${cycle}`}
           data={data}
@@ -95,11 +102,6 @@ export default function App() {
           topN={topN}
         />
         <AwardsSection key={`awards-${cycle}`} data={data} />
-        <RsoSearch
-          key={`rsos-${cycle}`}
-          data={data}
-          selectedCommittee={selectedCommittee}
-        />
         <RsoCompare
           key={`compare-${cycle}`}
           data={data}

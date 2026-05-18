@@ -50,12 +50,15 @@ export function FundingSection({ data, selectedCommittee, status, topN }: Props)
     }
   }, [filtered])
 
-  const biggestCuts = useMemo(
+  const biggestAllocations = useMemo(
     () =>
       [...filtered]
-        .sort((a, b) => b.gap - a.gap)
-        .slice(0, topN)
-        .filter((r) => r.gap > 0),
+        .filter((r) => r.funded > 0)
+        .sort((a, b) => {
+          if (b.ratio !== a.ratio) return b.ratio - a.ratio
+          return b.funded - a.funded
+        })
+        .slice(0, topN),
     [filtered, topN],
   )
 
@@ -73,15 +76,15 @@ export function FundingSection({ data, selectedCommittee, status, topN }: Props)
         transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
       >
         <div className="section-chapter" aria-hidden>
-          <span>III</span>
+          <span>IV</span>
         </div>
         <p className="section-eyebrow">Requested vs funded</p>
         <h2 id="funding-heading" className="section-title">
           Asked for, given
         </h2>
         <p className="section-lede">
-          Every dot is an RSO. The diagonal line is full funding. Distance below
-          the line is the gap between what was requested and what was approved.
+          Every dot is an RSO. The diagonal line is full funding — dots closer
+          to it received a larger share of what they asked for.
         </p>
       </motion.header>
 
@@ -113,19 +116,19 @@ export function FundingSection({ data, selectedCommittee, status, topN }: Props)
 
       <div className="funding-cuts">
         <header className="funding-cuts-head">
-          <h3>Biggest cuts</h3>
+          <h3>Biggest allocations</h3>
           <p>
-            Top {biggestCuts.length} {selectedCommittee ? `${COMMITTEE_SHORT[selectedCommittee]} ` : ''}
-            RSOs by gap between requested and funded.
+            Top {biggestAllocations.length} {selectedCommittee ? `${COMMITTEE_SHORT[selectedCommittee]} ` : ''}
+            RSOs by share of request funded.
           </p>
         </header>
 
-        {biggestCuts.length === 0 ? (
+        {biggestAllocations.length === 0 ? (
           <p className="funding-cuts-empty">
-            Every RSO in this view received its full request.
+            No funded allocations in this view yet.
           </p>
         ) : (
-          <DumbbellList rows={biggestCuts} />
+          <DumbbellList rows={biggestAllocations} />
         )}
       </div>
     </section>
@@ -352,8 +355,8 @@ function DumbbellList({ rows }: { rows: RsoFunding[] }) {
             </span>
           </div>
           <div className="dumbbell-numbers">
-            <span className="dumbbell-gap">−{currency(r.gap)}</span>
-            <span className="dumbbell-ratio">{percent(r.ratio)} funded</span>
+            <span className="dumbbell-gap">{currency(r.funded)}</span>
+            <span className="dumbbell-ratio">{percent(r.ratio)} of ask</span>
           </div>
         </li>
       ))}

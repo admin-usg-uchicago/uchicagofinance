@@ -73,16 +73,16 @@ export function ExpendituresSection({ data }: Props) {
         transition={{ duration: 0.55, ease: [0.2, 0.7, 0.2, 1] }}
       >
         <div className="section-chapter" aria-hidden>
-          <span>VI</span>
+          <span>VII</span>
         </div>
-        <p className="section-eyebrow">USG ledger</p>
+        <p className="section-eyebrow">Operating budget</p>
         <h2 id="expenditures-heading" className="section-title">
-          What USG spent on itself
+          Behind the scenes
         </h2>
         <p className="section-lede">
           {rows.length === 0
-            ? 'Internal expenditure detail will be published once the cycle is underway.'
-            : 'Every internal expenditure across cabinet, divisions, and partner units — line by line.'}
+            ? 'Operating expenditures will be published once the cycle is underway.'
+            : 'The programs, events, and operations that keep USG running for students — across cabinet, divisions, and partner units.'}
         </p>
       </motion.header>
 
@@ -91,7 +91,7 @@ export function ExpendituresSection({ data }: Props) {
       ) : (
         <>
           <div className="exp-summary">
-            <ExpStat label="Total spent" value={currency(aggregate.total)} accent />
+            <ExpStat label="Operating spend" value={currency(aggregate.total)} accent />
             <ExpStat label="Divisions" value={integer(aggregate.divisions)} />
             <ExpStat label="Categories" value={integer(aggregate.categories)} />
             <ExpStat label="Transactions" value={integer(aggregate.transactions)} />
