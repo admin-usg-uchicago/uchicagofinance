@@ -19,6 +19,7 @@ python ingestion/load_sheet.py <key>
 | Key | Description | Committee | Link |
 | --- | --- | --- | --- |
 | `central_2025-2026` | USG central allocation log (annual + recurring, all committees) | — | [open](https://docs.google.com/spreadsheets/d/1LQMgOsSS7YU9HgQH0V5BAPlgASOOSmleO3pkIxzJye8/edit?gid=0#gid=0) |
+| `central_2026-2027` | USG central allocation log for the 2026-27 cycle (in progress) | — | [open](https://docs.google.com/spreadsheets/d/1U9qeNKOmlqEBhTnRC1TX2SrNuZjBvmlMXwsUh02h9vI/edit?gid=0#gid=0) |
 
 ## Adding a new sheet
 

@@ -36,7 +36,7 @@ CYCLES: tuple[Cycle, ...] = (
         recurring="central_2025-2026__25-26_Recurring_Allocation.csv",
         budget="central_2025-2026__25-26_Revenues_and_Expenditures.csv",
         awards="central_2025-2026__25-26_RSO_Awards.csv",
-        expenditures="central_2025-2026__25-26_Detailed_USG_expenditures.csv",
+        expenditures="central_2025-2026__25-26_Detailed_Internal_USG_exp.csv",
     ),
     Cycle(
         slug="2026-27",
