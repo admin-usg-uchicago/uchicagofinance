@@ -50,6 +50,7 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 64px;
+  overflow-x: clip;
 }
 
 body {
@@ -61,6 +62,7 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 button {
@@ -127,6 +129,7 @@ a:hover {
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0;
 }
 
 .hero-dot {
@@ -2441,13 +2444,17 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 50;
+  width: 100%;
+  max-width: 100vw;
   background: rgba(26, 13, 10, 0.94);
   backdrop-filter: saturate(140%) blur(10px);
   -webkit-backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid rgba(255, 250, 247, 0.08);
+  overflow-x: clip;
 }
 
 .cycle-nav-inner {
+  width: 100%;
   max-width: 80rem;
   margin: 0 auto;
   display: flex;
@@ -2455,6 +2462,7 @@ a:hover {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.7rem var(--gutter);
+  min-width: 0;
 }
 
 .cycle-nav-brand {
@@ -2464,6 +2472,9 @@ a:hover {
   color: var(--bone);
   text-decoration: none;
   letter-spacing: 0.02em;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .cycle-nav-brand span {
@@ -2475,9 +2486,18 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  max-width: 100%;
+  min-width: 0;
   background: rgba(255, 250, 247, 0.06);
   border-radius: 999px;
   padding: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cycle-nav-pills::-webkit-scrollbar {
+  display: none;
 }
 
 .cycle-pill {
@@ -2533,12 +2553,29 @@ a:hover {
 }
 
 @media (max-width: 640px) {
+  .cycle-nav-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+
+  .cycle-nav-brand {
+    width: 100%;
+    text-align: center;
+  }
+
   .cycle-nav-brand span {
     display: none;
   }
+
+  .cycle-nav-pills {
+    justify-content: center;
+  }
+
   .cycle-pill {
     padding: 0.4rem 0.6rem;
     font-size: 0.72rem;
+    flex: 0 0 auto;
   }
   .cycle-pill-tag {
     display: none;
