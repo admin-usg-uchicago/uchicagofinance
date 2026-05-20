@@ -7,13 +7,13 @@ Alpha Kappa Psi (Beta Epsilon),sgfc,5495,1661.25
 Alpha Phi Omega,sgfc,2250,630
 American Constitution Society,sgfc,16650,3972
 American Red Cross of University of Chicago,sgfc,1705,936.25
-Amnesty International,sgfc,0,0
+Amnesty International,sgfc,0,3600
 Animal Legal Defense Fund - The University of Chicago Law School,sgfc,1450,850
 Ankara Magic,sgfc,665,665
 Apsara,sgfc,3846,1221
 Arab Student Association,sgfc,6730,3111.5
 Argentine Tango Club,sgfc,27910,3622.2
-Armenian Student Association,sgfc,0,3461.5
+Armenian Student Association,sgfc,,3461.5
 ArtShould,sgfc,900,400
 Asian Pacific American Medical Students Association,sgfc,1584,955.2
 Asian Policy Forum,sgfc,7730,4527.9
@@ -24,7 +24,7 @@ Bite Culinary Magazine,sgfc,5680,2800
 Black Action in Public Policy Studies,sgfc,7708,1732.5
 Black Student Fellowship,sgfc,3223.5,1579.47
 Blacklight Magazine,sgfc,1419,936.25
-Blue Chips,sgfc,9928.56,1494.75
+Blue Chips,sgfc,9928.56,1509.75
 Brazilian Student Association,sgfc,3060,1223.25
 Bridge Club,sgfc,13500,0
 Bridgeport Free Clinic,sgfc,1100,500
@@ -50,7 +50,7 @@ Chinese Students and Scholars Association,sgfc,61300,11625
 Chinese Undergraduate Students Association,sgfc,10590,4527.9
 Christians on Campus,sgfc,8230,2324
 CityStep UChicago,sgfc,389.75,369.75
-College Republicans,sgfc,9418.37,2455.6
+College Republicans,sgfc,9418.37,100
 Colombians at UChicago,sgfc,5115,1080
 Commedia dell'Arte,sgfc,455,405
 CS Student Activities Council,sgfc,12953.92,3530.75
@@ -110,7 +110,7 @@ Malaysian Students Association,sgfc,10100,1162.5
 Maroon TV,sgfc,5800,3038
 Maroons for Israel,sgfc,8550,3690
 Math Club,sgfc,5550,2137.5
-MECHA,sgfc,11975,3200.54
+MECHA,sgfc,11975,2677.5
 Med-ucate,sgfc,818,191
 MEDLIFE,sgfc,1370,992
 Medusa,sgfc,13400,1160
@@ -167,7 +167,7 @@ Science Olympiad,sgfc,18447.6,5505.5
 Sikh Student Association,sgfc,7629.99,3261.99
 Singapore Society,sgfc,4500,1800
 Sliced Bread,sgfc,5275,1500
-Society for International Relations,sgfc,0,630
+Society for International Relations,sgfc,0,0
 Society for Molecular Engineering,sgfc,9180,2696.4
 Society for the Advancement of Chicanos and Native Americans in STEM,sgfc,4775,1706.25
 Society of Asian Scientists and Engineers,sgfc,6890,1560
@@ -257,7 +257,7 @@ Bridgeport Free Clinic,csf,1150,1150
 Camp Kesem at University of Chicago,csf,975,0
 Chicago Street Medicine,csf,4700,4700
 CityStep UChicago,csf,1485.76,1485.76
-Community Health Initiative,csf,11150,10350
+Community Health Initiative,csf,11150,10345
 Delta Sigma Pi Professional Business Fraternity- Alpha Psi Chapter,csf,6000,0
 Folklore Society,csf,400,0
 Food Run Project,csf,31354.6,5097
